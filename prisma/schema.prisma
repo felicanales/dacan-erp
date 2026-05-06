@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────
+
+enum UserRole {
+  admin
+  operaciones
+  comercial
+  readonly
+}
+
+enum ProductoEstado {
+  disponible
+  agotado
+  en_transito
+  descontinuado
+}
+
+enum ContainerEstado {
+  en_preparacion
+  en_transito
+  en_aduana
+  liberado
+  descargado
+}
+
+enum PedidoEstado {
+  borrador
+  confirmado
+  en_preparacion
+  despachado
+  entregado
+  cancelado
+}
+
+enum TipoCliente {
+  b2b
+  b2c
+}
+
+enum EstadoRelacionB2B {
+  prospecto
+  activo
+  inactivo
+}
+
+enum TareaEstado {
+  pendiente
+  en_progreso
+  completada
+  cancelada
+}
+
+enum TareaPrioridad {
+  alta
+  media
+  baja
+}
+
+// ─── USUARIOS Y AUTH ─────────────────────────────────────
+
+model Usuario {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  nombre    String
+  email     String   @unique
+  rol       UserRole @default(readonly)
+  activo    Boolean  @default(true)
+  timezone  String   @default("America/Santiago")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tareasAsignadas Tarea[]             @relation("TareaAsignado")
+  tareasCreadas   Tarea[]             @relation("TareaCreador")
+  reuniones       ReunionParticipante[]
+}
+
+// ─── PRODUCTOS ───────────────────────────────────────────
+
+model Categoria {
+  id          String     @id @default(cuid())
+  nombre      String     @unique
+  descripcion String?
+  productos   Producto[]
+}
+
+model Producto {
+  id          String         @id @default(cuid())
+  sku         String         @unique
+  nombre      String
+  descripcion String?
+  categoriaId String
+  categoria   Categoria      @relation(fields: [categoriaId], references: [id])
+  precioCosto Decimal        @db.Decimal(12, 2)
+  precioB2B   Decimal        @db.Decimal(12, 2)
+  precioB2C   Decimal        @db.Decimal(12, 2)
+  stockActual Int            @default(0)
+  stockMinimo Int            @default(5)
+  proveedorId String?
+  proveedor   Proveedor?     @relation(fields: [proveedorId], references: [id])
+  containerId String?
+  container   Container?     @relation(fields: [containerId], references: [id])
+  fotos       String[]
+  estado      ProductoEstado @default(disponible)
+  notas       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  itemsPedido ItemPedido[]
+  inventario  Inventario?
+}
+
+// ─── INVENTARIO ──────────────────────────────────────────
+
+model Inventario {
+  id         String   @id @default(cuid())
+  productoId String   @unique
+  producto   Producto @relation(fields: [productoId], references: [id])
+  cantidad   Int      @default(0)
+  ubicacion  String?
+  updatedAt  DateTime @updatedAt
+}
+
+// ─── PROVEEDORES ─────────────────────────────────────────
+
+model Proveedor {
+  id               String      @id @default(cuid())
+  nombre           String
+  pais             String
+  ciudad           String?
+  contactoNombre   String?
+  contactoEmail    String?
+  contactoTelefono String?
+  moneda           String      @default("USD")
+  condicionesPago  String?
+  notas            String?
+  activo           Boolean     @default(true)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  productos  Producto[]
+  containers Container[]
+}
+
+// ─── CONTAINERS ──────────────────────────────────────────
+
+model Container {
+  id                  String          @id @default(cuid())
+  numero              String          @unique
+  proveedorId         String
+  proveedor           Proveedor       @relation(fields: [proveedorId], references: [id])
+  puertoOrigen        String
+  puertoDestino       String          @default("San Antonio")
+  fechaSalida         DateTime?
+  fechaArriboEstimada DateTime?
+  fechaArriboReal     DateTime?
+  estado              ContainerEstado @default(en_preparacion)
+  documentos          String[]
+  costoTotal          Decimal?        @db.Decimal(12, 2)
+  contenidoResumen    String?
+  notas               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  productos        Producto[]
+  historialEstados ContainerHistorialEstado[]
+}
+
+model ContainerHistorialEstado {
+  id          String          @id @default(cuid())
+  containerId String
+  container   Container       @relation(fields: [containerId], references: [id])
+  estado      ContainerEstado
+  nota        String?
+  fecha       DateTime        @default(now())
+}
+
+// ─── CLIENTES ────────────────────────────────────────────
+
+model ClienteB2B {
+  id               String            @id @default(cuid())
+  empresa          String
+  rut              String?
+  rubro            String?
+  contactoNombre   String
+  contactoEmail    String
+  contactoTelefono String?
+  ciudad           String?
+  estadoRelacion   EstadoRelacionB2B @default(prospecto)
+  notas            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  pedidos Pedido[]
+}
+
+model ClienteB2C {
+  id        String   @id @default(cuid())
+  nombre    String
+  email     String
+  telefono  String?
+  direccion String?
+  notas     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pedidos Pedido[]
+}
+
+// ─── PEDIDOS ─────────────────────────────────────────────
+
+model Pedido {
+  id           String       @id @default(cuid())
+  tipoCliente  TipoCliente
+  clienteB2BId String?
+  clienteB2B   ClienteB2B?  @relation(fields: [clienteB2BId], references: [id])
+  clienteB2CId String?
+  clienteB2C   ClienteB2C?  @relation(fields: [clienteB2CId], references: [id])
+  items        ItemPedido[]
+  total        Decimal      @db.Decimal(12, 2)
+  estado       PedidoEstado @default(borrador)
+  fechaPedido  DateTime     @default(now())
+  fechaEntrega DateTime?
+  notas        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model ItemPedido {
+  id             String   @id @default(cuid())
+  pedidoId       String
+  pedido         Pedido   @relation(fields: [pedidoId], references: [id])
+  productoId     String
+  producto       Producto @relation(fields: [productoId], references: [id])
+  cantidad       Int
+  precioUnitario Decimal  @db.Decimal(12, 2)
+  subtotal       Decimal  @db.Decimal(12, 2)
+}
+
+// ─── TAREAS ──────────────────────────────────────────────
+
+model Tarea {
+  id           String         @id @default(cuid())
+  titulo       String
+  descripcion  String?
+  asignadoAId  String
+  asignadoA    Usuario        @relation("TareaAsignado", fields: [asignadoAId], references: [id])
+  creadoPorId  String
+  creadoPor    Usuario        @relation("TareaCreador", fields: [creadoPorId], references: [id])
+  estado       TareaEstado    @default(pendiente)
+  prioridad    TareaPrioridad @default(media)
+  fechaLimite  DateTime?
+  moduloOrigen String?
+  notas        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+// ─── REUNIONES ───────────────────────────────────────────
+
+model Reunion {
+  id        String   @id @default(cuid())
+  titulo    String
+  fecha     DateTime
+  agenda    String?
+  acta      String?
+  acuerdos  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participantes ReunionParticipante[]
+}
+
+model ReunionParticipante {
+  id        String  @id @default(cuid())
+  reunionId String
+  reunion   Reunion @relation(fields: [reunionId], references: [id])
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@unique([reunionId, usuarioId])
+}
