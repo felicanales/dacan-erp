@@ -1,18 +1,18 @@
-# dependencies
-/node_modules
-/.pnp
+# dependencies (todos los servicios)
+node_modules/
+.pnp
 .pnp.js
 .yarn/install-state.gz
 
 # testing
-/coverage
+coverage/
 
-# next.js
-/.next/
-/out/
+# next.js (todos los servicios)
+.next/
+out/
 
 # production
-/build
+build/
 
 # misc
 .DS_Store
@@ -34,8 +34,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
-prisma/migrations/
+# prisma (migrations se generan, no se versionan en dev)
+**/prisma/migrations/
 
 # claude code (tooling local)
 .claude/

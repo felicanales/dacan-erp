@@ -1,53 +1,72 @@
 # Dacan ERP
 
 Sistema de gestión interno para Dacan Global Trading.
+Arquitectura de dos servicios: frontend (UI) y backend (API + base de datos).
+
+## Estructura del proyecto
+
+```
+dacan-erp/
+├── frontend/        # Next.js 15 — UI (puerto 3000)
+├── backend/         # Next.js 15 — API + Prisma (puerto 3001)
+├── .env.example     # Variables de entorno de referencia
+└── package.json     # Scripts raíz para correr ambos servicios
+```
 
 ## Stack
 
-- **Framework:** Next.js 15 (App Router)
-- **UI:** Tailwind CSS + shadcn/ui
-- **Auth:** Clerk
-- **ORM:** Prisma
-- **DB:** PostgreSQL (Railway)
-- **Correos:** Resend (pendiente de configurar)
-- **Archivos:** Cloudflare R2 (pendiente de configurar)
+| Servicio | Tecnología |
+|---|---|
+| Frontend | Next.js 15, Tailwind CSS, shadcn/ui, Clerk |
+| Backend | Next.js 15 (API routes), Prisma, PostgreSQL |
+| Auth | Clerk (JWT verificado en backend) |
+| Correos | Resend (pendiente) |
+| Archivos | Cloudflare R2 (pendiente) |
 
 ## Setup local
 
-1. Clonar el repositorio
-2. Instalar dependencias:
-   ```bash
-   npm install
-   ```
-3. Copiar variables de entorno:
-   ```bash
-   cp .env.example .env.local
-   ```
-4. Completar las variables en `.env.local` (ver `.env.example`)
-5. Crear la base de datos y correr migraciones:
-   ```bash
-   npm run db:migrate
-   ```
-6. (Opcional) Cargar datos de prueba:
-   ```bash
-   npm run db:seed
-   ```
-7. Iniciar el servidor de desarrollo:
-   ```bash
-   npm run dev
-   ```
+### 1. Instalar dependencias
 
-## Comandos útiles
+```bash
+npm run install:all
+```
 
-| Comando | Descripción |
-|---|---|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run db:migrate` | Crear y aplicar migraciones |
-| `npm run db:push` | Sincronizar schema sin migración (solo dev) |
-| `npm run db:studio` | Abrir Prisma Studio |
-| `npm run db:seed` | Cargar datos de prueba |
+O por separado:
+```bash
+npm install --prefix frontend
+npm install --prefix backend
+```
 
-## Módulos (Fase 1 — MVP)
+### 2. Variables de entorno
+
+Crear `.env.local` en cada servicio:
+```bash
+cp .env.example frontend/.env.local   # completar con variables de frontend
+cp .env.example backend/.env.local    # completar con variables de backend
+```
+
+Ver `.env.example` para referencia de qué variables van en cada servicio.
+
+### 3. Base de datos
+
+```bash
+npm run db:migrate     # crea tablas en PostgreSQL
+npm run db:seed        # carga datos de prueba
+```
+
+### 4. Correr en desarrollo
+
+```bash
+npm run dev            # inicia frontend (3000) y backend (3001) juntos
+```
+
+O por separado:
+```bash
+npm run dev:frontend   # solo frontend en localhost:3000
+npm run dev:backend    # solo backend en localhost:3001
+```
+
+## Módulos — Fase 1 (MVP)
 
 - [ ] Autenticación y roles (Clerk)
 - [ ] Catálogo de Productos
