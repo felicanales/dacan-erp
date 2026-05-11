@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
-import { Badge } from "@/components/ui/badge";
 import { ProveedorForm } from "@/components/proveedores/ProveedorForm";
 
 type Producto = { id: string; nombre: string; sku: string; estado: string };
@@ -28,12 +27,20 @@ type ProveedorDetalle = {
   containers: ContainerResumen[];
 };
 
-const ESTADOS_CONTAINER: Record<string, string> = {
+const ESTADO_CONTAINER: Record<string, string> = {
   en_preparacion: "En preparación",
-  en_transito: "En tránsito",
-  en_aduana: "En aduana",
-  liberado: "Liberado",
-  descargado: "Descargado",
+  en_transito:    "En tránsito",
+  en_aduana:      "En aduana",
+  liberado:       "Liberado",
+  descargado:     "Descargado",
+};
+
+const ESTADO_BADGE: Record<string, string> = {
+  en_preparacion: "bg-gray-100 text-gray-500 border-gray-200",
+  en_transito:    "bg-blue-50 text-blue-700 border-blue-200",
+  en_aduana:      "bg-amber-50 text-amber-700 border-amber-200",
+  liberado:       "bg-emerald-50 text-emerald-700 border-emerald-200",
+  descargado:     "bg-gray-100 text-gray-500 border-gray-200",
 };
 
 async function getProveedor(id: string): Promise<ProveedorDetalle | null> {
@@ -51,55 +58,63 @@ export default async function ProveedorDetallePage({
 }) {
   const { id } = await params;
   const proveedor = await getProveedor(id);
-
   if (!proveedor) notFound();
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-2xl">
+      {/* Breadcrumb + título */}
       <div>
         <Link
           href="/proveedores"
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4"
+          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-3 transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
-          Volver a proveedores
+          Proveedores
         </Link>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold text-gray-900">{proveedor.nombre}</h1>
-          <Badge variant={proveedor.activo ? "default" : "secondary"}>
+          <span className={[
+            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
+            proveedor.activo
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+              : "bg-gray-100 text-gray-500 border-gray-200",
+          ].join(" ")}>
+            <span className={["h-1.5 w-1.5 rounded-full", proveedor.activo ? "bg-emerald-500" : "bg-gray-400"].join(" ")} />
             {proveedor.activo ? "Activo" : "Inactivo"}
-          </Badge>
+          </span>
         </div>
-        <p className="mt-1 text-sm text-gray-500">
-          {proveedor.pais}
-          {proveedor.ciudad ? ` — ${proveedor.ciudad}` : ""}
+        <p className="text-sm text-gray-500 mt-1">
+          {proveedor.pais}{proveedor.ciudad ? ` — ${proveedor.ciudad}` : ""}
         </p>
       </div>
 
-      {/* Resumen containers */}
+      {/* Containers */}
       {proveedor.containers.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">
+        <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">
             Containers ({proveedor.containers.length})
           </h2>
-          <ul className="space-y-2">
+          <ul className="divide-y divide-gray-200">
             {proveedor.containers.map((c) => (
-              <li key={c.id} className="flex items-center justify-between text-sm">
+              <li key={c.id} className="py-2.5 flex items-center justify-between">
                 <Link
                   href={`/containers/${c.id}`}
-                  className="font-medium text-gray-900 hover:underline"
+                  className="font-mono text-sm font-medium text-gray-900 hover:text-blue-600"
                 >
                   {c.numero}
                 </Link>
                 <div className="flex items-center gap-3">
                   {c.fechaArriboEstimada && (
-                    <span className="text-gray-500">
+                    <span className="text-xs text-gray-500">
                       Arribo: {new Date(c.fechaArriboEstimada).toLocaleDateString("es-CL")}
                     </span>
                   )}
-                  <Badge variant="outline" className="text-xs">
-                    {ESTADOS_CONTAINER[c.estado] ?? c.estado}
-                  </Badge>
+                  <span className={[
+                    "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border",
+                    ESTADO_BADGE[c.estado] ?? "bg-gray-100 text-gray-500 border-gray-200",
+                  ].join(" ")}>
+                    {ESTADO_CONTAINER[c.estado] ?? c.estado}
+                  </span>
                 </div>
               </li>
             ))}
@@ -109,39 +124,41 @@ export default async function ProveedorDetallePage({
 
       {/* Productos */}
       {proveedor.productos.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">
+        <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">
             Productos ({proveedor.productos.length})
           </h2>
-          <ul className="space-y-2">
+          <ul className="divide-y divide-gray-200">
             {proveedor.productos.map((p) => (
-              <li key={p.id} className="flex items-center justify-between text-sm">
+              <li key={p.id} className="py-2.5 flex items-center justify-between">
                 <Link
                   href={`/productos/${p.id}`}
-                  className="font-medium text-gray-900 hover:underline"
+                  className="text-sm font-medium text-gray-900 hover:text-blue-600"
                 >
                   {p.nombre}
                 </Link>
-                <span className="text-gray-400 text-xs">{p.sku}</span>
+                <span className="text-xs font-mono text-gray-400 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded">
+                  {p.sku}
+                </span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* Formulario de edición */}
+      {/* Formulario edición */}
       <ProveedorForm
         proveedorId={proveedor.id}
         defaultValues={{
-          nombre: proveedor.nombre,
-          pais: proveedor.pais,
-          ciudad: proveedor.ciudad ?? "",
-          contactoNombre: proveedor.contactoNombre ?? "",
-          contactoEmail: proveedor.contactoEmail ?? "",
+          nombre:           proveedor.nombre,
+          pais:             proveedor.pais,
+          ciudad:           proveedor.ciudad           ?? "",
+          contactoNombre:   proveedor.contactoNombre   ?? "",
+          contactoEmail:    proveedor.contactoEmail    ?? "",
           contactoTelefono: proveedor.contactoTelefono ?? "",
-          moneda: proveedor.moneda,
-          condicionesPago: proveedor.condicionesPago ?? "",
-          notas: proveedor.notas ?? "",
+          moneda:           proveedor.moneda,
+          condicionesPago:  proveedor.condicionesPago  ?? "",
+          notas:            proveedor.notas            ?? "",
         }}
       />
     </div>

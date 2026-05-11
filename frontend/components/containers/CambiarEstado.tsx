@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 type ContainerEstado =
   | "en_preparacion"
@@ -22,10 +23,10 @@ type ContainerEstado =
 
 const ESTADOS: { value: ContainerEstado; label: string }[] = [
   { value: "en_preparacion", label: "En preparación" },
-  { value: "en_transito", label: "En tránsito" },
-  { value: "en_aduana", label: "En aduana" },
-  { value: "liberado", label: "Liberado" },
-  { value: "descargado", label: "Descargado" },
+  { value: "en_transito",    label: "En tránsito" },
+  { value: "en_aduana",      label: "En aduana" },
+  { value: "liberado",       label: "Liberado" },
+  { value: "descargado",     label: "Descargado" },
 ];
 
 type Props = {
@@ -33,20 +34,22 @@ type Props = {
   estadoActual: ContainerEstado;
 };
 
+const inputClass =
+  "border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500 h-9";
+
 export function CambiarEstado({ containerId, estadoActual }: Props) {
   const router = useRouter();
   const [nuevoEstado, setNuevoEstado] = useState<ContainerEstado>(estadoActual);
-  const [nota, setNota] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [nota,        setNota]        = useState("");
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState<string | null>(null);
 
-  const cambioHecho = nuevoEstado === estadoActual;
+  const sinCambio = nuevoEstado === estadoActual;
 
   async function handleCambio() {
-    if (cambioHecho) return;
+    if (sinCambio) return;
     setError(null);
     setLoading(true);
-
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001"}/api/containers/${containerId}`,
@@ -56,16 +59,14 @@ export function CambiarEstado({ containerId, estadoActual }: Props) {
           body: JSON.stringify({ estado: nuevoEstado, nota: nota || undefined }),
         }
       );
-
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Error al cambiar estado");
       }
-
       setNota("");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -74,12 +75,14 @@ export function CambiarEstado({ containerId, estadoActual }: Props) {
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
-        <Label>Nuevo estado</Label>
+        <Label className="text-sm font-medium text-gray-900">Nuevo estado</Label>
         <Select
           value={nuevoEstado}
-          onValueChange={(v) => setNuevoEstado(v as ContainerEstado)}
+          onValueChange={(v) => {
+            if (v) setNuevoEstado(v as ContainerEstado);
+          }}
         >
-          <SelectTrigger>
+          <SelectTrigger className={inputClass}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -92,23 +95,25 @@ export function CambiarEstado({ containerId, estadoActual }: Props) {
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="nota-estado">Nota (opcional)</Label>
+        <Label htmlFor="nota-estado" className="text-sm font-medium text-gray-900">
+          Nota <span className="text-gray-500 font-normal">(opcional)</span>
+        </Label>
         <Textarea
           id="nota-estado"
+          className="border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500 resize-none"
           value={nota}
           onChange={(e) => setNota(e.target.value)}
           placeholder="Ej: Llegó al puerto, en espera de inspección"
           rows={2}
         />
       </div>
-      {error && (
-        <p className="text-xs text-red-600">{error}</p>
-      )}
+      {error && <p className="text-xs text-red-600">{error}</p>}
       <Button
         onClick={handleCambio}
-        disabled={cambioHecho || loading}
-        className="w-full"
+        disabled={sinCambio || loading}
+        className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm h-9 disabled:opacity-40"
       >
+        {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
         {loading ? "Actualizando..." : "Actualizar estado"}
       </Button>
     </div>

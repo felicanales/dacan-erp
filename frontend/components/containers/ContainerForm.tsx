@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 type Proveedor = { id: string; nombre: string; pais: string };
 
@@ -34,21 +35,26 @@ type Props = {
   containerId?: string;
 };
 
+const inputClass =
+  "border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500 h-9";
+
+const labelClass = "text-sm font-medium text-gray-900";
+
 export function ContainerForm({ proveedores, defaultValues, containerId }: Props) {
-  const router = useRouter();
+  const router    = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error,   setError]   = useState<string | null>(null);
 
   const [form, setForm] = useState<ContainerFormData>({
-    numero: defaultValues?.numero ?? "",
-    proveedorId: defaultValues?.proveedorId ?? "",
-    puertoOrigen: defaultValues?.puertoOrigen ?? "",
-    puertoDestino: defaultValues?.puertoDestino ?? "San Antonio",
-    fechaSalida: defaultValues?.fechaSalida ?? "",
+    numero:              defaultValues?.numero              ?? "",
+    proveedorId:         defaultValues?.proveedorId         ?? "",
+    puertoOrigen:        defaultValues?.puertoOrigen        ?? "",
+    puertoDestino:       defaultValues?.puertoDestino       ?? "San Antonio",
+    fechaSalida:         defaultValues?.fechaSalida         ?? "",
     fechaArriboEstimada: defaultValues?.fechaArriboEstimada ?? "",
-    costoTotal: defaultValues?.costoTotal ?? "",
-    contenidoResumen: defaultValues?.contenidoResumen ?? "",
-    notas: defaultValues?.notas ?? "",
+    costoTotal:          defaultValues?.costoTotal          ?? "",
+    contenidoResumen:    defaultValues?.contenidoResumen    ?? "",
+    notas:               defaultValues?.notas               ?? "",
   });
 
   function set(field: keyof ContainerFormData, value: string) {
@@ -59,81 +65,66 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
-      const url = containerId
-        ? `/api/containers/${containerId}`
-        : "/api/containers";
+      const url    = containerId ? `/api/containers/${containerId}` : "/api/containers";
       const method = containerId ? "PUT" : "POST";
-
       const body: Record<string, unknown> = {
-        numero: form.numero,
-        proveedorId: form.proveedorId,
-        puertoOrigen: form.puertoOrigen,
-        puertoDestino: form.puertoDestino,
-        fechaSalida: form.fechaSalida ? new Date(form.fechaSalida).toISOString() : null,
-        fechaArriboEstimada: form.fechaArriboEstimada
-          ? new Date(form.fechaArriboEstimada).toISOString()
-          : null,
-        costoTotal: form.costoTotal ? parseFloat(form.costoTotal) : null,
-        contenidoResumen: form.contenidoResumen || null,
-        notas: form.notas || null,
+        numero:              form.numero,
+        proveedorId:         form.proveedorId,
+        puertoOrigen:        form.puertoOrigen,
+        puertoDestino:       form.puertoDestino,
+        fechaSalida:         form.fechaSalida ? new Date(form.fechaSalida).toISOString() : null,
+        fechaArriboEstimada: form.fechaArriboEstimada ? new Date(form.fechaArriboEstimada).toISOString() : null,
+        costoTotal:          form.costoTotal ? parseFloat(form.costoTotal) : null,
+        contenidoResumen:    form.contenidoResumen || null,
+        notas:               form.notas || null,
       };
-
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001"}${url}`,
-        {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        }
+        { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
       );
-
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Error al guardar");
       }
-
       router.push("/containers");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Datos del container */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-4">
-        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-          Datos del container
-        </h2>
+      <section className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-gray-900">Datos del container</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="numero">
+            <Label htmlFor="numero" className={labelClass}>
               Número de container <span className="text-red-500">*</span>
             </Label>
             <Input
               id="numero"
+              className={`${inputClass} font-mono`}
               value={form.numero}
               onChange={(e) => set("numero", e.target.value)}
               placeholder="Ej: TCKU3456789"
-              className="font-mono"
               required
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="proveedorId">
+            <Label htmlFor="proveedorId" className={labelClass}>
               Proveedor <span className="text-red-500">*</span>
             </Label>
             <Select
               value={form.proveedorId}
-              onValueChange={(v) => set("proveedorId", v)}
+              onValueChange={(v) => set("proveedorId", v ?? "")}
               required
             >
-              <SelectTrigger id="proveedorId">
+              <SelectTrigger id="proveedorId" className={inputClass}>
                 <SelectValue placeholder="Seleccionar proveedor" />
               </SelectTrigger>
               <SelectContent>
@@ -148,18 +139,17 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
         </div>
       </section>
 
-      {/* Ruta */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-4">
-        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-          Ruta y fechas
-        </h2>
+      {/* Ruta y fechas */}
+      <section className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-gray-900">Ruta y fechas</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="puertoOrigen">
+            <Label htmlFor="puertoOrigen" className={labelClass}>
               Puerto de origen <span className="text-red-500">*</span>
             </Label>
             <Input
               id="puertoOrigen"
+              className={inputClass}
               value={form.puertoOrigen}
               onChange={(e) => set("puertoOrigen", e.target.value)}
               placeholder="Ej: Shanghái"
@@ -167,28 +157,31 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="puertoDestino">Puerto de destino</Label>
+            <Label htmlFor="puertoDestino" className={labelClass}>Puerto de destino</Label>
             <Input
               id="puertoDestino"
+              className={inputClass}
               value={form.puertoDestino}
               onChange={(e) => set("puertoDestino", e.target.value)}
               placeholder="Ej: San Antonio"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="fechaSalida">Fecha de salida</Label>
+            <Label htmlFor="fechaSalida" className={labelClass}>Fecha de salida</Label>
             <Input
               id="fechaSalida"
               type="date"
+              className={inputClass}
               value={form.fechaSalida}
               onChange={(e) => set("fechaSalida", e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="fechaArriboEstimada">Arribo estimado</Label>
+            <Label htmlFor="fechaArriboEstimada" className={labelClass}>Arribo estimado</Label>
             <Input
               id="fechaArriboEstimada"
               type="date"
+              className={inputClass}
               value={form.fechaArriboEstimada}
               onChange={(e) => set("fechaArriboEstimada", e.target.value)}
             />
@@ -197,28 +190,26 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
       </section>
 
       {/* Contenido y costos */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-4">
-        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-          Contenido y costos
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="costoTotal">Costo total (USD)</Label>
-            <Input
-              id="costoTotal"
-              type="number"
-              min={0}
-              step={0.01}
-              value={form.costoTotal}
-              onChange={(e) => set("costoTotal", e.target.value)}
-              placeholder="0.00"
-            />
-          </div>
+      <section className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-gray-900">Contenido y costos</h2>
+        <div className="space-y-1.5 max-w-xs">
+          <Label htmlFor="costoTotal" className={labelClass}>Costo total (USD)</Label>
+          <Input
+            id="costoTotal"
+            type="number"
+            min={0}
+            step={0.01}
+            className={inputClass}
+            value={form.costoTotal}
+            onChange={(e) => set("costoTotal", e.target.value)}
+            placeholder="0.00"
+          />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="contenidoResumen">Resumen del contenido</Label>
+          <Label htmlFor="contenidoResumen" className={labelClass}>Resumen del contenido</Label>
           <Textarea
             id="contenidoResumen"
+            className="border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500 resize-none"
             value={form.contenidoResumen}
             onChange={(e) => set("contenidoResumen", e.target.value)}
             placeholder="Ej: 500 unidades producto A, 200 unidades producto B..."
@@ -226,9 +217,10 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="notas">Notas adicionales</Label>
+          <Label htmlFor="notas" className={labelClass}>Notas adicionales</Label>
           <Textarea
             id="notas"
+            className="border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500 resize-none"
             value={form.notas}
             onChange={(e) => set("notas", e.target.value)}
             placeholder="Observaciones sobre el envío, acuerdos especiales, etc."
@@ -238,22 +230,24 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
       </section>
 
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-4 py-3">
+        <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-4 py-3">
           {error}
         </p>
       )}
 
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={loading}>
-          {loading
-            ? "Guardando..."
-            : containerId
-            ? "Guardar cambios"
-            : "Crear container"}
+        <Button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-500 hover:bg-blue-600 text-white text-sm h-9"
+        >
+          {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+          {loading ? "Guardando..." : containerId ? "Guardar cambios" : "Crear container"}
         </Button>
         <Button
           type="button"
           variant="outline"
+          className="border-gray-200 text-gray-900 text-sm h-9"
           onClick={() => router.back()}
           disabled={loading}
         >

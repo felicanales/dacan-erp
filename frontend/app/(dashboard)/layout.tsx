@@ -11,17 +11,14 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { userId } = await auth();
-
-  if (!userId) {
-    redirect("/sign-in");
-  }
+  if (!userId) redirect("/sign-in");
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-notion-bg">
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0">
         <Header />
-        <main className="flex-1 p-6 bg-gray-50">{children}</main>
+        <main className="flex-1 px-8 py-8 bg-notion-bg">{children}</main>
       </div>
     </div>
   );
