@@ -49,3 +49,11 @@ export async function PUT(
   const { id } = await params;
   return proxyToBackend(`/api/proveedores/${id}`, request);
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  return proxyToBackend(`/api/proveedores/${id}`, request);
+}

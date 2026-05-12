@@ -61,7 +61,7 @@ export default async function ProveedorDetallePage({
   if (!proveedor) notFound();
 
   return (
-    <div className="w-full max-w-2xl space-y-6">
+    <div className="w-full max-w-4xl space-y-6">
       {/* Breadcrumb + título */}
       <div>
         <Link
@@ -86,6 +86,46 @@ export default async function ProveedorDetallePage({
         <p className="text-sm text-gray-500 mt-1">
           {proveedor.pais}{proveedor.ciudad ? ` — ${proveedor.ciudad}` : ""}
         </p>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
+        <h2 className="mb-4 text-sm font-semibold text-gray-900">Informacion completa</h2>
+        <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-xs text-gray-500">Contacto</dt>
+            <dd className="mt-1 text-gray-900">{proveedor.contactoNombre || "-"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-gray-500">Correo</dt>
+            <dd className="mt-1 text-gray-900">
+              {proveedor.contactoEmail ? (
+                <a href={`mailto:${proveedor.contactoEmail}`} className="hover:text-blue-600">
+                  {proveedor.contactoEmail}
+                </a>
+              ) : (
+                "-"
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-gray-500">Telefono / WhatsApp</dt>
+            <dd className="mt-1 text-gray-900">{proveedor.contactoTelefono || "-"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-gray-500">Moneda</dt>
+            <dd className="mt-1 font-mono text-gray-900">{proveedor.moneda}</dd>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="text-xs text-gray-500">Condiciones de pago</dt>
+            <dd className="mt-1 whitespace-pre-wrap text-gray-900">
+              {proveedor.condicionesPago || "-"}
+            </dd>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="text-xs text-gray-500">Notas</dt>
+            <dd className="mt-1 whitespace-pre-wrap text-gray-900">{proveedor.notas || "-"}</dd>
+          </div>
+        </dl>
       </div>
 
       {/* Containers */}
@@ -147,20 +187,22 @@ export default async function ProveedorDetallePage({
       )}
 
       {/* Formulario edición */}
-      <ProveedorForm
-        proveedorId={proveedor.id}
-        defaultValues={{
-          nombre:           proveedor.nombre,
-          pais:             proveedor.pais,
-          ciudad:           proveedor.ciudad           ?? "",
-          contactoNombre:   proveedor.contactoNombre   ?? "",
-          contactoEmail:    proveedor.contactoEmail    ?? "",
-          contactoTelefono: proveedor.contactoTelefono ?? "",
-          moneda:           proveedor.moneda,
-          condicionesPago:  proveedor.condicionesPago  ?? "",
-          notas:            proveedor.notas            ?? "",
-        }}
-      />
+      <div id="editar">
+        <ProveedorForm
+          proveedorId={proveedor.id}
+          defaultValues={{
+            nombre:           proveedor.nombre,
+            pais:             proveedor.pais,
+            ciudad:           proveedor.ciudad           ?? "",
+            contactoNombre:   proveedor.contactoNombre   ?? "",
+            contactoEmail:    proveedor.contactoEmail    ?? "",
+            contactoTelefono: proveedor.contactoTelefono ?? "",
+            moneda:           proveedor.moneda,
+            condicionesPago:  proveedor.condicionesPago  ?? "",
+            notas:            proveedor.notas            ?? "",
+          }}
+        />
+      </div>
     </div>
   );
 }

@@ -100,3 +100,36 @@ export async function PUT(
 
   return NextResponse.json(proveedor);
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const claims = await verifyAuth(req);
+  if (!claims) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const existing = await prisma.proveedor.findUnique({
+    where: { id },
+    include: {
+      _count: { select: { productos: true, containers: true } },
+    },
+  });
+
+  if (!existing) {
+    return NextResponse.json({ error: "Proveedor no encontrado" }, { status: 404 });
+  }
+
+  if (existing._count.productos > 0 || existing._count.containers > 0) {
+    return NextResponse.json(
+      { error: "No se puede eliminar un proveedor con productos o containers asociados" },
+      { status: 409 }
+    );
+  }
+
+  await prisma.proveedor.delete({ where: { id } });
+
+  return NextResponse.json({ ok: true });
+}
