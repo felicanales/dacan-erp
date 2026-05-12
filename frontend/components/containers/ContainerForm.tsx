@@ -36,7 +36,7 @@ type Props = {
 };
 
 const inputClass =
-  "border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500 h-9";
+  "h-9 w-full border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500";
 
 const labelClass = "text-sm font-medium text-gray-900";
 
@@ -99,7 +99,7 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Datos del container */}
-      <section className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+      <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
         <h2 className="text-sm font-semibold text-gray-900">Datos del container</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -140,7 +140,7 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
       </section>
 
       {/* Ruta y fechas */}
-      <section className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+      <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
         <h2 className="text-sm font-semibold text-gray-900">Ruta y fechas</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -190,9 +190,9 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
       </section>
 
       {/* Contenido y costos */}
-      <section className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+      <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
         <h2 className="text-sm font-semibold text-gray-900">Contenido y costos</h2>
-        <div className="space-y-1.5 max-w-xs">
+        <div className="max-w-none space-y-1.5 sm:max-w-xs">
           <Label htmlFor="costoTotal" className={labelClass}>Costo total (USD)</Label>
           <Input
             id="costoTotal"
@@ -235,11 +235,11 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
         </p>
       )}
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button
           type="submit"
           disabled={loading}
-          className="bg-blue-500 hover:bg-blue-600 text-white text-sm h-9"
+          className="h-9 w-full bg-blue-500 text-sm text-white hover:bg-blue-600 sm:w-auto"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
           {loading ? "Guardando..." : containerId ? "Guardar cambios" : "Crear container"}
@@ -247,7 +247,7 @@ export function ContainerForm({ proveedores, defaultValues, containerId }: Props
         <Button
           type="button"
           variant="outline"
-          className="border-gray-200 text-gray-900 text-sm h-9"
+          className="h-9 w-full border-gray-200 text-sm text-gray-900 sm:w-auto"
           onClick={() => router.back()}
           disabled={loading}
         >

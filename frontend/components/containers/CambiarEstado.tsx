@@ -35,7 +35,7 @@ type Props = {
 };
 
 const inputClass =
-  "border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500 h-9";
+  "h-9 w-full border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500";
 
 export function CambiarEstado({ containerId, estadoActual }: Props) {
   const router = useRouter();

@@ -14,11 +14,13 @@ export default async function DashboardLayout({
   if (!userId) redirect("/sign-in");
 
   return (
-    <div className="flex min-h-screen bg-notion-bg">
+    <div className="flex min-h-screen flex-col bg-notion-bg md:flex-row">
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0">
         <Header />
-        <main className="flex-1 px-8 py-8 bg-notion-bg">{children}</main>
+        <main className="flex-1 bg-notion-bg px-4 py-5 sm:px-6 md:px-8 md:py-8">
+          {children}
+        </main>
       </div>
     </div>
   );

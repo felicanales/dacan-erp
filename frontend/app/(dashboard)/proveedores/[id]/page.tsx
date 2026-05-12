@@ -61,7 +61,7 @@ export default async function ProveedorDetallePage({
   if (!proveedor) notFound();
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="w-full max-w-2xl space-y-6">
       {/* Breadcrumb + título */}
       <div>
         <Link
@@ -71,7 +71,7 @@ export default async function ProveedorDetallePage({
           <ChevronLeft className="h-4 w-4" />
           Proveedores
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold text-gray-900">{proveedor.nombre}</h1>
           <span className={[
             "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
@@ -90,20 +90,20 @@ export default async function ProveedorDetallePage({
 
       {/* Containers */}
       {proveedor.containers.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg p-5">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-gray-900 mb-3">
             Containers ({proveedor.containers.length})
           </h2>
           <ul className="divide-y divide-gray-200">
             {proveedor.containers.map((c) => (
-              <li key={c.id} className="py-2.5 flex items-center justify-between">
+              <li key={c.id} className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                 <Link
                   href={`/containers/${c.id}`}
                   className="font-mono text-sm font-medium text-gray-900 hover:text-blue-600"
                 >
                   {c.numero}
                 </Link>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                   {c.fechaArriboEstimada && (
                     <span className="text-xs text-gray-500">
                       Arribo: {new Date(c.fechaArriboEstimada).toLocaleDateString("es-CL")}
@@ -124,13 +124,13 @@ export default async function ProveedorDetallePage({
 
       {/* Productos */}
       {proveedor.productos.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg p-5">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-gray-900 mb-3">
             Productos ({proveedor.productos.length})
           </h2>
           <ul className="divide-y divide-gray-200">
             {proveedor.productos.map((p) => (
-              <li key={p.id} className="py-2.5 flex items-center justify-between">
+              <li key={p.id} className="flex items-center justify-between gap-3 py-2.5">
                 <Link
                   href={`/productos/${p.id}`}
                   className="text-sm font-medium text-gray-900 hover:text-blue-600"

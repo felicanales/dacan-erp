@@ -83,9 +83,9 @@ export default async function ContainersPage() {
   }, {});
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="w-full max-w-5xl space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Containers</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -94,7 +94,7 @@ export default async function ContainersPage() {
         </div>
         <Link
           href="/containers/nuevo"
-          className={cn(buttonVariants(), "bg-blue-500 hover:bg-blue-600 text-white text-sm h-9")}
+          className={cn(buttonVariants(), "h-9 w-full bg-blue-500 text-sm text-white hover:bg-blue-600 sm:w-auto")}
         >
           + Nuevo container
         </Link>
@@ -102,11 +102,11 @@ export default async function ContainersPage() {
 
       {/* Pipeline */}
       {containers.length > 0 && (
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {ESTADOS_FLUJO.map((estado) => (
             <div
               key={estado}
-              className="bg-white border border-gray-200 rounded-lg p-4 text-center"
+              className="rounded-lg border border-gray-200 bg-white p-3 text-center sm:p-4"
             >
               <p className="text-2xl font-bold text-gray-900">
                 {countByEstado[estado] ?? 0}
@@ -121,7 +121,7 @@ export default async function ContainersPage() {
 
       {/* Tabla / Empty state */}
       {containers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-gray-200 rounded-lg">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 px-4 py-12 text-center sm:py-16">
           <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mb-4">
             <Package className="h-6 w-6 text-gray-500" />
           </div>
@@ -131,13 +131,66 @@ export default async function ContainersPage() {
           </p>
           <Link
             href="/containers/nuevo"
-            className={cn(buttonVariants(), "mt-4 bg-blue-500 hover:bg-blue-600 text-white text-sm h-9")}
+            className={cn(buttonVariants(), "mt-4 h-9 w-full bg-blue-500 text-sm text-white hover:bg-blue-600 sm:w-auto")}
           >
             + Nuevo container
           </Link>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <>
+        <div className="space-y-3 md:hidden">
+          <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+            <p className="text-xs text-gray-500">
+              <span className="font-semibold text-gray-900">{activos}</span> activo{activos !== 1 ? "s" : ""} Â·{" "}
+              <span className="font-semibold text-gray-900">{containers.length}</span> total
+            </p>
+          </div>
+          {containers.map((c) => (
+            <Link
+              key={c.id}
+              href={`/containers/${c.id}`}
+              className="block rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:bg-gray-50"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-mono text-sm font-semibold text-gray-900">{c.numero}</p>
+                  <p className="mt-1 truncate text-sm text-gray-500">
+                    {c.proveedor.nombre} Â· {c.proveedor.pais}
+                  </p>
+                </div>
+                <span className={[
+                  "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium",
+                  ESTADO_BADGE[c.estado] ?? "bg-gray-100 text-gray-500 border-gray-200",
+                ].join(" ")}>
+                  <span className={["h-1.5 w-1.5 shrink-0 rounded-full", ESTADO_DOT[c.estado] ?? "bg-gray-400"].join(" ")} />
+                  {ESTADO_LABELS[c.estado] ?? c.estado}
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-gray-400">Ruta</p>
+                  <p className="mt-0.5 text-gray-900">{c.puertoOrigen} / {c.puertoDestino}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Arribo</p>
+                  <p className="mt-0.5 text-gray-900">
+                    {formatFecha(c.fechaArriboReal ?? c.fechaArriboEstimada)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Salida</p>
+                  <p className="mt-0.5 text-gray-900">{formatFecha(c.fechaSalida)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Productos</p>
+                  <p className="mt-0.5 text-gray-900">{c._count.productos}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        <div className="hidden overflow-hidden rounded-lg border border-gray-200 bg-white md:block">
           <div className="px-4 py-2.5 border-b border-gray-200">
             <p className="text-xs text-gray-500">
               <span className="font-semibold text-gray-900">{activos}</span> activo{activos !== 1 ? "s" : ""} ·{" "}
@@ -210,6 +263,7 @@ export default async function ContainersPage() {
             </TableBody>
           </Table>
         </div>
+        </>
       )}
     </div>
   );

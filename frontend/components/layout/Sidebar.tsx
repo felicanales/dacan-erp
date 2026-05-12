@@ -40,21 +40,21 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-60 min-h-screen bg-notion-bg2 border-r border-notion-border flex flex-col shrink-0">
+    <aside className="flex min-h-[100dvh] w-full shrink-0 flex-col border-b border-notion-border bg-notion-bg2 md:sticky md:top-0 md:h-screen md:min-h-screen md:w-60 md:border-r md:border-b-0">
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-notion-border">
-        <p className="text-sm font-semibold text-notion-text">Dacan Global Trading</p>
-        <p className="text-xs text-notion-muted mt-0.5">ERP interno</p>
+      <div className="border-b border-notion-border px-5 py-5 md:px-4 md:py-4">
+        <p className="text-base font-semibold text-notion-text md:text-sm">Dacan Global Trading</p>
+        <p className="mt-0.5 text-sm text-notion-muted md:text-xs">ERP interno</p>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-3 space-y-4 overflow-y-auto">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-4 py-5 md:space-y-4 md:px-2 md:py-3">
         {navGroups.map(({ label, items }) => (
           <div key={label}>
-            <p className="px-2 mb-1 text-[10px] font-semibold text-notion-muted uppercase tracking-wide">
+            <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wide text-notion-muted md:mb-1">
               {label}
             </p>
-            <div className="space-y-0.5">
+            <div className="space-y-1 md:space-y-0.5">
               {items.map(({ label: itemLabel, href, icon: Icon }) => {
                 const active = pathname === href || pathname.startsWith(href + "/");
                 return (
@@ -62,13 +62,13 @@ export function Sidebar() {
                     key={href}
                     href={href}
                     className={cn(
-                      "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors duration-100",
+                      "flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-base transition-colors duration-100 md:min-h-0 md:gap-2 md:px-2 md:py-1.5 md:text-sm",
                       active
                         ? "bg-notion-bg3 text-notion-text font-medium"
                         : "text-notion-muted hover:bg-notion-bg3 hover:text-notion-text"
                     )}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
                     <span className="truncate">{itemLabel}</span>
                   </Link>
                 );
@@ -78,7 +78,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="px-4 py-3 border-t border-notion-border">
+      <div className="border-t border-notion-border px-5 py-4 md:px-4 md:py-3">
         <p className="text-[10px] text-notion-faint font-mono">v0.1 — desarrollo</p>
       </div>
     </aside>

@@ -111,7 +111,7 @@ export default async function ContainerDetallePage({
   const estadoIndex = ESTADOS_FLUJO.indexOf(container.estado);
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="w-full max-w-5xl space-y-6">
       {/* Breadcrumb + título */}
       <div>
         <Link
@@ -121,7 +121,7 @@ export default async function ContainerDetallePage({
           <ChevronLeft className="h-4 w-4" />
           Containers
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold text-gray-900 font-mono">
             {container.numero}
           </h1>
@@ -141,8 +141,8 @@ export default async function ContainerDetallePage({
       </div>
 
       {/* Progress bar de estados */}
-      <div className="bg-white border border-gray-200 rounded-lg p-5">
-        <div className="flex items-start justify-between relative">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
+        <div className="relative flex min-w-[560px] items-start justify-between">
           <div className="absolute left-4 right-4 top-4 h-px bg-gray-200" />
           <div
             className="absolute left-4 top-4 h-px bg-blue-500 transition-all"
@@ -184,14 +184,14 @@ export default async function ContainerDetallePage({
       </div>
 
       {/* Datos rápidos */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Salida",          valor: formatFecha(container.fechaSalida, true) },
           { label: "Arribo estimado", valor: formatFecha(container.fechaArriboEstimada, true) },
           { label: "Arribo real",     valor: formatFecha(container.fechaArriboReal, true) },
           { label: "Costo total",     valor: container.costoTotal ? `USD ${Number(container.costoTotal).toLocaleString()}` : "—" },
         ].map(({ label, valor }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+          <div key={label} className="rounded-lg border border-gray-200 bg-white px-4 py-3">
             <p className="text-xs text-gray-500 mb-1">{label}</p>
             <p className="text-sm font-medium text-gray-900">{valor}</p>
           </div>
@@ -199,18 +199,18 @@ export default async function ContainerDetallePage({
       </div>
 
       {/* Layout 2 columnas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
         {/* Columna principal */}
         <div className="lg:col-span-2 space-y-6">
           {container.productos.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
               <h2 className="text-sm font-semibold text-gray-900 mb-4">
                 Productos ({container.productos.length})
               </h2>
               <ul className="divide-y divide-gray-200">
                 {container.productos.map((p) => (
-                  <li key={p.id} className="py-2.5 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                  <li key={p.id} className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-2">
                       <Link
                         href={`/productos/${p.id}`}
                         className="text-sm text-gray-900 hover:text-blue-600 font-medium"
@@ -250,13 +250,13 @@ export default async function ContainerDetallePage({
         {/* Columna lateral */}
         <div className="space-y-6">
           {/* Cambiar estado */}
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Actualizar estado</h2>
             <CambiarEstado containerId={container.id} estadoActual={container.estado} />
           </div>
 
           {/* Historial */}
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-gray-900 mb-5">Historial</h2>
             {container.historialEstados.length === 0 ? (
               <p className="text-sm text-gray-500">Sin historial.</p>

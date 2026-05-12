@@ -29,19 +29,19 @@ const listos = modulos.filter((m) => m.done).length;
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="w-full max-w-5xl space-y-6 md:space-y-8">
       <div>
         <h1 className="text-2xl font-semibold text-notion-text">Panel de control</h1>
         <p className="text-sm text-notion-muted mt-1">Resumen general del sistema Dacan ERP</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         {kpiCards.map(({ label, valor, sub, icon: Icon, href }) => (
           <Link
             key={label}
             href={href}
-            className="group bg-notion-bg border border-notion-border rounded-lg p-5 hover:bg-notion-bg2 transition-colors"
+            className="group rounded-lg border border-notion-border bg-notion-bg p-4 transition-colors hover:bg-notion-bg2 sm:p-5"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="p-2 bg-notion-bg2 rounded-md">
@@ -56,10 +56,10 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
         {/* Módulos */}
-        <div className="lg:col-span-2 bg-notion-bg border border-notion-border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="rounded-lg border border-notion-border bg-notion-bg p-4 sm:p-6 lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-sm font-semibold text-notion-text">Módulos del sistema</h2>
             <span className="text-xs text-notion-muted bg-notion-bg2 rounded-full px-2.5 py-1">
               {listos} / {modulos.length}
@@ -95,7 +95,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Accesos rápidos */}
-        <div className="bg-notion-bg border border-notion-border rounded-lg p-6">
+        <div className="rounded-lg border border-notion-border bg-notion-bg p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-notion-text mb-4">Accesos rápidos</h2>
           <div className="space-y-1">
             {accesos.map(({ label, href, icon: Icon }) => (
