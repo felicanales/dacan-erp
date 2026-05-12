@@ -1,6 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
 
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:3001";
+const BACKEND_URL =
+  process.env.BACKEND_URL ??
+  process.env.NEXT_PUBLIC_BACKEND_URL ??
+  "http://localhost:3001";
 
 async function getAuthHeaders(): Promise<HeadersInit> {
   const { getToken } = await auth();

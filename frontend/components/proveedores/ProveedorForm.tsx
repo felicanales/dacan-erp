@@ -67,10 +67,11 @@ export function ProveedorForm({ defaultValues, proveedorId }: Props) {
     try {
       const url    = proveedorId ? `/api/proveedores/${proveedorId}` : "/api/proveedores";
       const method = proveedorId ? "PUT" : "POST";
-      const res    = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001"}${url}`,
-        { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) }
-      );
+      const res    = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Error al guardar");
