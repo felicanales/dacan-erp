@@ -19,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={cn("font-sans", inter.variable)}>
       <body>
-        <ClerkProvider>{children}</ClerkProvider>
+        <ClerkProvider dynamic>{children}</ClerkProvider>
       </body>
     </html>
   );

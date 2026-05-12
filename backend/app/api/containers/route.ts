@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClerkClient } from "@clerk/backend";
+import { verifyToken } from "@clerk/backend";
 import { prisma } from "@/src/lib/prisma";
 import { z } from "zod";
-
-const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY,
-});
 
 async function verifyAuth(req: NextRequest) {
   const authHeader = req.headers.get("Authorization");
   const token = authHeader?.replace("Bearer ", "");
   if (!token) return null;
   try {
-    return await clerkClient.verifyToken(token);
+    return await verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
   } catch {
     return null;
   }
