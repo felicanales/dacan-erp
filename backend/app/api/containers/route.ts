@@ -34,16 +34,13 @@ type ProveedorResumen = {
 };
 
 function uniqueProveedores(
-  productos: { proveedor: ProveedorResumen | null }[],
-  fallback?: ProveedorResumen | null
+  productos: { proveedor: ProveedorResumen | null }[]
 ) {
   const byId = new Map<string, ProveedorResumen>();
 
   for (const producto of productos) {
     if (producto.proveedor) byId.set(producto.proveedor.id, producto.proveedor);
   }
-
-  if (byId.size === 0 && fallback) byId.set(fallback.id, fallback);
 
   return [...byId.values()];
 }
@@ -57,7 +54,6 @@ export async function GET(req: NextRequest) {
   const containers = await prisma.container.findMany({
     orderBy: { createdAt: "desc" },
     include: {
-      proveedor: { select: { id: true, nombre: true, pais: true } },
       productos: {
         select: {
           proveedor: { select: { id: true, nombre: true, pais: true } },
@@ -68,9 +64,9 @@ export async function GET(req: NextRequest) {
   });
 
   return NextResponse.json(
-    containers.map(({ productos, proveedor, ...container }) => ({
+    containers.map(({ productos, ...container }) => ({
       ...container,
-      proveedores: uniqueProveedores(productos, proveedor),
+      proveedores: uniqueProveedores(productos),
     }))
   );
 }

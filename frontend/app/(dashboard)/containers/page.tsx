@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ContainerActions } from "@/components/containers/ContainerActions";
 
 type ProveedorResumen = {
   id: string;
@@ -166,16 +167,18 @@ export default async function ContainersPage() {
               </p>
             </div>
             {containers.map((c) => (
-              <Link
+              <article
                 key={c.id}
-                href={`/containers/${c.id}`}
-                className="block rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate font-mono text-sm font-semibold text-gray-900">
+                    <Link
+                      href={`/containers/${c.id}`}
+                      className="block truncate font-mono text-sm font-semibold text-gray-900 hover:text-blue-600"
+                    >
                       {c.numero}
-                    </p>
+                    </Link>
                     <p className="mt-1 truncate text-sm text-gray-500">
                       {formatProveedores(c.proveedores)}
                     </p>
@@ -223,7 +226,14 @@ export default async function ContainersPage() {
                     <p className="mt-0.5 text-gray-900">{c._count.productos}</p>
                   </div>
                 </div>
-              </Link>
+                <div className="mt-4 border-t border-gray-100 pt-3">
+                  <ContainerActions
+                    containerId={c.id}
+                    containerNumero={c.numero}
+                    canDelete={c._count.productos === 0}
+                  />
+                </div>
+              </article>
             ))}
           </div>
 
@@ -249,6 +259,7 @@ export default async function ContainersPage() {
                     "Arribo",
                     "Productos",
                     "Estado",
+                    "Acciones",
                   ].map((h) => (
                     <TableHead
                       key={h}
@@ -340,6 +351,13 @@ export default async function ContainersPage() {
                         />
                         {ESTADO_LABELS[c.estado] ?? c.estado}
                       </span>
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <ContainerActions
+                        containerId={c.id}
+                        containerNumero={c.numero}
+                        canDelete={c._count.productos === 0}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

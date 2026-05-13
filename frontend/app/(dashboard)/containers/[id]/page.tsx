@@ -256,19 +256,21 @@ export default async function ContainerDetallePage({
             )}
           </div>
 
-          <ContainerForm
-            containerId={container.id}
-            defaultValues={{
-              numero: container.numero,
-              puertoOrigen: container.puertoOrigen,
-              puertoDestino: container.puertoDestino,
-              fechaSalida: container.fechaSalida?.slice(0, 10) ?? "",
-              fechaArriboEstimada: container.fechaArriboEstimada?.slice(0, 10) ?? "",
-              costoTotal: container.costoTotal ?? "",
-              contenidoResumen: container.contenidoResumen ?? "",
-              notas: container.notas ?? "",
-            }}
-          />
+          <div id="editar">
+            <ContainerForm
+              containerId={container.id}
+              defaultValues={{
+                numero: container.numero,
+                puertoOrigen: container.puertoOrigen,
+                puertoDestino: container.puertoDestino,
+                fechaSalida: container.fechaSalida?.slice(0, 10) ?? "",
+                fechaArriboEstimada: container.fechaArriboEstimada?.slice(0, 10) ?? "",
+                costoTotal: container.costoTotal ?? "",
+                contenidoResumen: container.contenidoResumen ?? "",
+                notas: container.notas ?? "",
+              }}
+            />
+          </div>
         </div>
 
         <div className="space-y-6">

@@ -59,16 +59,6 @@ export async function GET(
           },
         },
       },
-      containers: {
-        select: {
-          id: true,
-          numero: true,
-          estado: true,
-          fechaArriboEstimada: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-      },
     },
   });
 
@@ -76,7 +66,7 @@ export async function GET(
     return NextResponse.json({ error: "Proveedor no encontrado" }, { status: 404 });
   }
 
-  const { productos, containers, ...rest } = proveedor;
+  const { productos, ...rest } = proveedor;
   const containersById = new Map<
     string,
     {
@@ -87,10 +77,6 @@ export async function GET(
       createdAt: Date;
     }
   >();
-
-  for (const container of containers) {
-    containersById.set(container.id, container);
-  }
 
   for (const producto of productos) {
     if (producto.container) {
@@ -164,7 +150,7 @@ export async function DELETE(
   const existing = await prisma.proveedor.findUnique({
     where: { id },
     include: {
-      _count: { select: { productos: true, containers: true } },
+      _count: { select: { productos: true } },
     },
   });
 
@@ -172,9 +158,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Proveedor no encontrado" }, { status: 404 });
   }
 
-  if (existing._count.productos > 0 || existing._count.containers > 0) {
+  if (existing._count.productos > 0) {
     return NextResponse.json(
-      { error: "No se puede eliminar un proveedor con productos o containers asociados" },
+      { error: "No se puede eliminar un proveedor con productos asociados" },
       { status: 409 }
     );
   }

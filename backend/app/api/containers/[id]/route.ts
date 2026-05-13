@@ -44,16 +44,13 @@ type ProveedorResumen = {
 };
 
 function uniqueProveedores(
-  productos: { proveedor: ProveedorResumen | null }[],
-  fallback?: ProveedorResumen | null
+  productos: { proveedor: ProveedorResumen | null }[]
 ) {
   const byId = new Map<string, ProveedorResumen>();
 
   for (const producto of productos) {
     if (producto.proveedor) byId.set(producto.proveedor.id, producto.proveedor);
   }
-
-  if (byId.size === 0 && fallback) byId.set(fallback.id, fallback);
 
   return [...byId.values()];
 }
@@ -82,7 +79,6 @@ export async function GET(
   const container = await prisma.container.findUnique({
     where: { id },
     include: {
-      proveedor: { select: { id: true, nombre: true, pais: true } },
       productos: {
         select: {
           id: true,
@@ -103,12 +99,12 @@ export async function GET(
     return NextResponse.json({ error: "Container no encontrado" }, { status: 404 });
   }
 
-  const { proveedor, productos, ...rest } = container;
+  const { productos, ...rest } = container;
 
   return NextResponse.json({
     ...rest,
     productos,
-    proveedores: uniqueProveedores(productos, proveedor),
+    proveedores: uniqueProveedores(productos),
   });
 }
 
@@ -207,4 +203,40 @@ export async function PUT(
   });
 
   return NextResponse.json(container);
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const claims = await verifyAuth(req);
+  if (!claims) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const existing = await prisma.container.findUnique({
+    where: { id },
+    include: {
+      _count: { select: { productos: true } },
+    },
+  });
+
+  if (!existing) {
+    return NextResponse.json({ error: "Container no encontrado" }, { status: 404 });
+  }
+
+  if (existing._count.productos > 0) {
+    return NextResponse.json(
+      { error: "No se puede eliminar un container con productos asociados" },
+      { status: 409 }
+    );
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.containerHistorialEstado.deleteMany({ where: { containerId: id } });
+    await tx.container.delete({ where: { id } });
+  });
+
+  return NextResponse.json({ ok: true });
 }

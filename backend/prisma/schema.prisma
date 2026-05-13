@@ -145,8 +145,7 @@ model Proveedor {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
-  productos  Producto[]
-  containers Container[]
+  productos Producto[]
 }
 
 // ─── CONTAINERS ──────────────────────────────────────────
@@ -154,8 +153,6 @@ model Proveedor {
 model Container {
   id                  String          @id @default(cuid())
   numero              String          @unique
-  proveedorId         String?
-  proveedor           Proveedor?      @relation(fields: [proveedorId], references: [id])
   puertoOrigen        String
   puertoDestino       String          @default("San Antonio")
   fechaSalida         DateTime?

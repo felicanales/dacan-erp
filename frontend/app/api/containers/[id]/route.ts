@@ -14,7 +14,9 @@ async function proxyToBackend(path: string, request: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const body = request.method === "GET" ? undefined : await request.text();
+  const body = ["GET", "DELETE"].includes(request.method)
+    ? undefined
+    : await request.text();
   const res = await fetch(`${BACKEND_URL}${path}`, {
     method: request.method,
     headers: {
@@ -43,6 +45,14 @@ export async function GET(
 }
 
 export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  return proxyToBackend(`/api/containers/${id}`, request);
+}
+
+export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
