@@ -13,6 +13,7 @@ const modulos = [
   { label: "Base de datos",          done: true,  href: null },
   { label: "Proveedores",            done: true,  href: "/proveedores" },
   { label: "Containers",             done: true,  href: "/containers" },
+  { label: "Reuniones",              done: true,  href: "/reuniones" },
   { label: "Catálogo de Productos",  done: false, href: null },
   { label: "Inventario",             done: false, href: null },
   { label: "Clientes B2B / B2C",     done: false, href: null },

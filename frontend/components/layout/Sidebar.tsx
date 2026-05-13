@@ -6,14 +6,17 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Building2, Package, Tag, Warehouse,
   Users, ShoppingCart, ClipboardList, Target, Map,
-  BarChart3, CheckSquare, CalendarDays,
+  BarChart3, CheckSquare, CalendarDays, FileText,
 } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: React.ElementType };
 type SidebarProps = { onNavigate?: () => void };
 
 const navGroups: { label: string; items: NavItem[] }[] = [
-  { label: "General",     items: [{ label: "Inicio",         href: "/dashboard",    icon: LayoutDashboard }] },
+  { label: "General", items: [
+    { label: "Inicio",   href: "/dashboard", icon: LayoutDashboard },
+    { label: "Páginas",  href: "/paginas",   icon: FileText },
+  ]},
   { label: "Operaciones", items: [
     { label: "Proveedores",    href: "/proveedores", icon: Building2 },
     { label: "Containers",     href: "/containers",  icon: Package },
@@ -41,6 +44,7 @@ const recentItems: NavItem[] = [
   { label: "Panel", href: "/dashboard", icon: LayoutDashboard },
   { label: "Proveedores", href: "/proveedores", icon: Building2 },
   { label: "Containers", href: "/containers", icon: Package },
+  { label: "Reuniones", href: "/reuniones", icon: CalendarDays },
 ];
 
 export function Sidebar({ onNavigate }: SidebarProps) {

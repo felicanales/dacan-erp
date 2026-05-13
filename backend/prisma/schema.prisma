@@ -64,6 +64,18 @@ enum TareaPrioridad {
   baja
 }
 
+enum ReunionTipo {
+  interna
+  con_proveedor
+  con_cliente
+}
+
+enum ReunionEstado {
+  programada
+  completada
+  cancelada
+}
+
 // ─── USUARIOS Y AUTH ─────────────────────────────────────
 
 model Usuario {
@@ -108,6 +120,7 @@ model Producto {
   containerId String?
   container   Container?     @relation(fields: [containerId], references: [id])
   fotos       String[]
+  fotoPortada String?
   estado      ProductoEstado @default(disponible)
   notas       String?
   createdAt   DateTime       @default(now())
@@ -263,14 +276,21 @@ model Tarea {
 // ─── REUNIONES ───────────────────────────────────────────
 
 model Reunion {
-  id        String   @id @default(cuid())
-  titulo    String
-  fecha     DateTime
-  agenda    String?
-  acta      String?
-  acuerdos  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String      @id @default(cuid())
+  titulo          String
+  fecha           DateTime
+  duracionMinutos Int?
+  tipo            ReunionTipo @default(interna)
+  estado          ReunionEstado @default(programada)
+  linkVideoCall   String?
+  agenda          String?
+  acta            String?
+  acuerdos        String?
+  notasIa         String?
+  actaEnviada     Boolean     @default(false)
+  actaEnviadaAt   DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   participantes ReunionParticipante[]
 }
@@ -283,4 +303,15 @@ model ReunionParticipante {
   usuario   Usuario @relation(fields: [usuarioId], references: [id])
 
   @@unique([reunionId, usuarioId])
+}
+
+// ─── PÁGINAS ─────────────────────────────────────────────
+
+model Pagina {
+  id        String   @id @default(cuid())
+  titulo    String   @default("Sin título")
+  icono     String?
+  contenido Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

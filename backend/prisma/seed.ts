@@ -1,8 +1,11 @@
 import { PrismaClient } from "@prisma/client";
+import { ensureTeamUsers } from "../src/lib/team-users";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  await ensureTeamUsers(prisma);
+
   // Categorías base
   const categorias = await Promise.all([
     prisma.categoria.upsert({
@@ -44,9 +47,32 @@ async function main() {
     },
   });
 
+  const producto = await prisma.producto.upsert({
+    where: { sku: "DAC-ALF-001" },
+    update: {},
+    create: {
+      sku: "DAC-ALF-001",
+      nombre: "Alfombra persa 2x3 m",
+      descripcion: "Alfombra decorativa importada para venta B2B y B2C.",
+      categoriaId: categorias[0].id,
+      precioCosto: 120,
+      precioB2B: 189990,
+      precioB2C: 249990,
+      stockActual: 8,
+      stockMinimo: 3,
+      proveedorId: proveedor.id,
+      fotos: [],
+      fotoPortada: null,
+      estado: "disponible",
+      notas: "Producto de muestra para validar el catalogo.",
+    },
+  });
+
   console.log("Seed completado:", {
     categorias: categorias.length,
     proveedores: 1,
+    productos: producto ? 1 : 0,
+    usuarios: 5,
   });
 }
 
