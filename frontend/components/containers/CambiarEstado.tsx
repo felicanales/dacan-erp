@@ -51,14 +51,11 @@ export function CambiarEstado({ containerId, estadoActual }: Props) {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001"}/api/containers/${containerId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ estado: nuevoEstado, nota: nota || undefined }),
-        }
-      );
+      const res = await fetch(`/api/containers/${containerId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado, nota: nota || undefined }),
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Error al cambiar estado");

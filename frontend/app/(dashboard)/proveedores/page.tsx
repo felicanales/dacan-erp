@@ -36,7 +36,6 @@ async function getProveedores(): Promise<Proveedor[]> {
 
 export default async function ProveedoresPage() {
   const proveedores = await getProveedores();
-  const activos = proveedores.filter((p) => p.activo).length;
   const paises = new Set(proveedores.map((p) => p.pais)).size;
 
   return (
@@ -63,8 +62,7 @@ export default async function ProveedoresPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
           {[
             { label: "Total", valor: proveedores.length },
-            { label: "Activos", valor: activos },
-            { label: "Paises", valor: paises },
+            { label: "Países", valor: paises },
           ].map(({ label, valor }) => (
             <div key={label} className="rounded-lg border border-gray-200 bg-white p-4">
               <p className="text-3xl font-bold text-gray-900">{valor}</p>
@@ -178,9 +176,6 @@ export default async function ProveedoresPage() {
                   <TableHead className="h-9 px-4 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
                     Items
                   </TableHead>
-                  <TableHead className="h-9 px-4 text-xs font-medium uppercase tracking-wide text-gray-500">
-                    Estado
-                  </TableHead>
                   <TableHead className="h-9 px-4 text-right text-xs font-medium uppercase tracking-wide text-gray-500">
                     Acciones
                   </TableHead>
@@ -240,24 +235,6 @@ export default async function ProveedoresPage() {
                         <span className="text-sm text-gray-900">{p._count.containers}</span>
                         <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-gray-400">
                           Prod / cont
-                        </span>
-                      </TableCell>
-                      <TableCell className="px-4 py-3 align-top">
-                        <span
-                          className={[
-                            "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium",
-                            p.activo
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-gray-100 text-gray-500 border-gray-200",
-                          ].join(" ")}
-                        >
-                          <span
-                            className={[
-                              "h-1.5 w-1.5 rounded-full",
-                              p.activo ? "bg-emerald-500" : "bg-gray-400",
-                            ].join(" ")}
-                          />
-                          {p.activo ? "Activo" : "Inactivo"}
                         </span>
                       </TableCell>
                       <TableCell className="px-4 py-3 align-top">

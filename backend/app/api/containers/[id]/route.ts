@@ -27,7 +27,6 @@ const ESTADOS_VALIDOS: ContainerEstado[] = [
 
 const updateSchema = z.object({
   numero: z.string().min(1).optional(),
-  proveedorId: z.string().optional(),
   puertoOrigen: z.string().optional(),
   puertoDestino: z.string().optional(),
   fechaSalida: z.string().datetime({ offset: true }).optional().nullable(),
@@ -37,6 +36,27 @@ const updateSchema = z.object({
   contenidoResumen: z.string().optional().nullable(),
   notas: z.string().optional().nullable(),
 });
+
+type ProveedorResumen = {
+  id: string;
+  nombre: string;
+  pais: string;
+};
+
+function uniqueProveedores(
+  productos: { proveedor: ProveedorResumen | null }[],
+  fallback?: ProveedorResumen | null
+) {
+  const byId = new Map<string, ProveedorResumen>();
+
+  for (const producto of productos) {
+    if (producto.proveedor) byId.set(producto.proveedor.id, producto.proveedor);
+  }
+
+  if (byId.size === 0 && fallback) byId.set(fallback.id, fallback);
+
+  return [...byId.values()];
+}
 
 const cambioEstadoSchema = z.object({
   estado: z.enum([
@@ -62,9 +82,16 @@ export async function GET(
   const container = await prisma.container.findUnique({
     where: { id },
     include: {
-      proveedor: { select: { id: true, nombre: true, pais: true, ciudad: true } },
+      proveedor: { select: { id: true, nombre: true, pais: true } },
       productos: {
-        select: { id: true, nombre: true, sku: true, estado: true, stockActual: true },
+        select: {
+          id: true,
+          nombre: true,
+          sku: true,
+          estado: true,
+          stockActual: true,
+          proveedor: { select: { id: true, nombre: true, pais: true } },
+        },
       },
       historialEstados: {
         orderBy: { fecha: "desc" },
@@ -76,7 +103,13 @@ export async function GET(
     return NextResponse.json({ error: "Container no encontrado" }, { status: 404 });
   }
 
-  return NextResponse.json(container);
+  const { proveedor, productos, ...rest } = container;
+
+  return NextResponse.json({
+    ...rest,
+    productos,
+    proveedores: uniqueProveedores(productos, proveedor),
+  });
 }
 
 export async function PUT(
@@ -152,7 +185,6 @@ export async function PUT(
     where: { id },
     data: {
       ...(data.numero !== undefined && { numero: data.numero }),
-      ...(data.proveedorId !== undefined && { proveedorId: data.proveedorId }),
       ...(data.puertoOrigen !== undefined && { puertoOrigen: data.puertoOrigen }),
       ...(data.puertoDestino !== undefined && { puertoDestino: data.puertoDestino }),
       ...(data.fechaSalida !== undefined && {

@@ -37,7 +37,7 @@ export function Header({ userName, showBackToSidebar, onBackToSidebar }: HeaderP
       </div>
 
       <div className="shrink-0">
-        <UserButton appearance={{ elements: { avatarBox: { width: 26, height: 26 } } }} />
+        <UserButton appearance={{ elements: { avatarBox: { width: 46, height: 46 } } }} />
       </div>
     </header>
   );

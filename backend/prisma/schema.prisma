@@ -154,8 +154,8 @@ model Proveedor {
 model Container {
   id                  String          @id @default(cuid())
   numero              String          @unique
-  proveedorId         String
-  proveedor           Proveedor       @relation(fields: [proveedorId], references: [id])
+  proveedorId         String?
+  proveedor           Proveedor?      @relation(fields: [proveedorId], references: [id])
   puertoOrigen        String
   puertoDestino       String          @default("San Antonio")
   fechaSalida         DateTime?

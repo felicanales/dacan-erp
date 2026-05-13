@@ -42,9 +42,31 @@ export async function GET(
   const proveedor = await prisma.proveedor.findUnique({
     where: { id },
     include: {
-      productos: { select: { id: true, nombre: true, sku: true, estado: true } },
+      productos: {
+        select: {
+          id: true,
+          nombre: true,
+          sku: true,
+          estado: true,
+          container: {
+            select: {
+              id: true,
+              numero: true,
+              estado: true,
+              fechaArriboEstimada: true,
+              createdAt: true,
+            },
+          },
+        },
+      },
       containers: {
-        select: { id: true, numero: true, estado: true, fechaArriboEstimada: true },
+        select: {
+          id: true,
+          numero: true,
+          estado: true,
+          fechaArriboEstimada: true,
+          createdAt: true,
+        },
         orderBy: { createdAt: "desc" },
       },
     },
@@ -54,7 +76,35 @@ export async function GET(
     return NextResponse.json({ error: "Proveedor no encontrado" }, { status: 404 });
   }
 
-  return NextResponse.json(proveedor);
+  const { productos, containers, ...rest } = proveedor;
+  const containersById = new Map<
+    string,
+    {
+      id: string;
+      numero: string;
+      estado: string;
+      fechaArriboEstimada: Date | null;
+      createdAt: Date;
+    }
+  >();
+
+  for (const container of containers) {
+    containersById.set(container.id, container);
+  }
+
+  for (const producto of productos) {
+    if (producto.container) {
+      containersById.set(producto.container.id, producto.container);
+    }
+  }
+
+  return NextResponse.json({
+    ...rest,
+    productos: productos.map(({ container, ...producto }) => producto),
+    containers: [...containersById.values()]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .map(({ createdAt, ...container }) => container),
+  });
 }
 
 export async function PUT(

@@ -18,7 +18,6 @@ async function verifyAuth(req: NextRequest) {
 
 const containerSchema = z.object({
   numero: z.string().min(1),
-  proveedorId: z.string().min(1),
   puertoOrigen: z.string().min(1),
   puertoDestino: z.string().default("San Antonio"),
   fechaSalida: z.string().datetime({ offset: true }).optional().nullable(),
@@ -27,6 +26,27 @@ const containerSchema = z.object({
   contenidoResumen: z.string().optional().nullable(),
   notas: z.string().optional().nullable(),
 });
+
+type ProveedorResumen = {
+  id: string;
+  nombre: string;
+  pais: string;
+};
+
+function uniqueProveedores(
+  productos: { proveedor: ProveedorResumen | null }[],
+  fallback?: ProveedorResumen | null
+) {
+  const byId = new Map<string, ProveedorResumen>();
+
+  for (const producto of productos) {
+    if (producto.proveedor) byId.set(producto.proveedor.id, producto.proveedor);
+  }
+
+  if (byId.size === 0 && fallback) byId.set(fallback.id, fallback);
+
+  return [...byId.values()];
+}
 
 export async function GET(req: NextRequest) {
   const claims = await verifyAuth(req);
@@ -38,11 +58,21 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
     include: {
       proveedor: { select: { id: true, nombre: true, pais: true } },
+      productos: {
+        select: {
+          proveedor: { select: { id: true, nombre: true, pais: true } },
+        },
+      },
       _count: { select: { productos: true } },
     },
   });
 
-  return NextResponse.json(containers);
+  return NextResponse.json(
+    containers.map(({ productos, proveedor, ...container }) => ({
+      ...container,
+      proveedores: uniqueProveedores(productos, proveedor),
+    }))
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -62,18 +92,10 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
-  const proveedorExiste = await prisma.proveedor.findUnique({
-    where: { id: data.proveedorId },
-  });
-  if (!proveedorExiste) {
-    return NextResponse.json({ error: "Proveedor no encontrado" }, { status: 400 });
-  }
-
   const container = await prisma.$transaction(async (tx) => {
     const c = await tx.container.create({
       data: {
         numero: data.numero,
-        proveedorId: data.proveedorId,
         puertoOrigen: data.puertoOrigen,
         puertoDestino: data.puertoDestino,
         fechaSalida: data.fechaSalida ? new Date(data.fechaSalida) : null,

@@ -1,21 +1,8 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import { apiFetch } from "@/lib/api-client";
 import { ContainerForm } from "@/components/containers/ContainerForm";
 
-type Proveedor = { id: string; nombre: string; pais: string };
-
-async function getProveedores(): Promise<Proveedor[]> {
-  try {
-    return await apiFetch<Proveedor[]>("/api/proveedores");
-  } catch {
-    return [];
-  }
-}
-
 export default async function NuevoContainerPage() {
-  const proveedores = await getProveedores();
-
   return (
     <div className="w-full max-w-2xl space-y-6">
       <div>
@@ -31,7 +18,7 @@ export default async function NuevoContainerPage() {
           Registra el seguimiento de un nuevo envío.
         </p>
       </div>
-      <ContainerForm proveedores={proveedores} />
+      <ContainerForm />
     </div>
   );
 }

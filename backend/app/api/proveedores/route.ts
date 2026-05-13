@@ -37,11 +37,28 @@ export async function GET(req: NextRequest) {
   const proveedores = await prisma.proveedor.findMany({
     orderBy: { nombre: "asc" },
     include: {
-      _count: { select: { productos: true, containers: true } },
+      containers: { select: { id: true } },
+      productos: { select: { containerId: true } },
+      _count: { select: { productos: true } },
     },
   });
 
-  return NextResponse.json(proveedores);
+  return NextResponse.json(
+    proveedores.map(({ containers, productos, _count, ...proveedor }) => {
+      const containerIds = new Set(containers.map((container) => container.id));
+      for (const producto of productos) {
+        if (producto.containerId) containerIds.add(producto.containerId);
+      }
+
+      return {
+        ...proveedor,
+        _count: {
+          productos: _count.productos,
+          containers: containerIds.size,
+        },
+      };
+    })
+  );
 }
 
 export async function POST(req: NextRequest) {
