@@ -197,3 +197,82 @@
   height: 0;
   pointer-events: none;
 }
+
+/* Clean document editor */
+.tiptap {
+  min-height: 52vh;
+  font-size: 1rem;
+  line-height: 1.85;
+  color: #111827;
+  caret-color: #111827;
+}
+.tiptap:focus {
+  outline: none;
+}
+.tiptap > * + * {
+  margin-top: 0.75rem;
+}
+.tiptap h1,
+.tiptap h2,
+.tiptap h3 {
+  color: #111827;
+  font-weight: 650;
+}
+.tiptap h1 {
+  font-size: 1.75rem;
+  line-height: 1.25;
+  margin-top: 1.75rem;
+}
+.tiptap h2 {
+  font-size: 1.35rem;
+  line-height: 1.35;
+  margin-top: 1.5rem;
+}
+.tiptap h3 {
+  font-size: 1.1rem;
+  line-height: 1.45;
+  margin-top: 1.25rem;
+}
+.tiptap p {
+  margin: 0;
+}
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.35rem;
+}
+.tiptap li + li {
+  margin-top: 0.2rem;
+}
+.tiptap blockquote {
+  border-left: 3px solid #e5e7eb;
+  color: #4b5563;
+  font-style: normal;
+  margin: 1rem 0;
+  padding-left: 1rem;
+}
+.tiptap code {
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+  color: #374151;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  padding: 0.12em 0.35em;
+}
+.tiptap pre {
+  background-color: #111827;
+  border-radius: 0.5rem;
+  color: #f9fafb;
+  margin: 1rem 0;
+  overflow-x: auto;
+  padding: 1rem;
+}
+.tiptap pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+.tiptap hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.75rem 0;
+}

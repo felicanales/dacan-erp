@@ -1,16 +1,24 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { EditorContent, useEditor } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import Underline from "@tiptap/extension-underline";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ChevronLeft, Check, Loader2, Trash2,
-  Bold, Italic, Underline as UnderlineIcon, Strikethrough,
-  Heading1, Heading2, Heading3, List, ListOrdered, Quote,
-  Code, Code2, Minus,
+  Bold,
+  Check,
+  ChevronLeft,
+  Code,
+  Italic,
+  Loader2,
+  MoreHorizontal,
+  Strikethrough,
+  Trash2,
+  Underline as UnderlineIcon,
 } from "lucide-react";
 
 type JSONContent = Record<string, unknown>;
@@ -22,88 +30,112 @@ type Props = {
   initialContenido: JSONContent | null;
 };
 
-export function PaginaEditor({ id, initialTitulo, initialIcono, initialContenido }: Props) {
+type SaveState = "saved" | "saving" | "dirty" | "error";
+
+export function PaginaEditor({ id, initialTitulo, initialContenido }: Props) {
   const router = useRouter();
   const [titulo, setTitulo] = useState(initialTitulo || "Sin título");
-  const [icono, setIcono] = useState(initialIcono || "");
-  const [guardando, setGuardando] = useState(false);
-  const [guardado, setGuardado] = useState(true);
+  const [saveState, setSaveState] = useState<SaveState>("saved");
   const [showDelete, setShowDelete] = useState(false);
+  const [showActions, setShowActions] = useState(false);
   const [deletingPage, setDeletingPage] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestRef = useRef({ titulo, icono });
+  const latestRef = useRef({ titulo });
 
   useEffect(() => {
-    latestRef.current = { titulo, icono };
-  }, [titulo, icono]);
+    latestRef.current = { titulo };
+  }, [titulo]);
 
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit,
-      Placeholder.configure({ placeholder: "Escribe algo aquí..." }),
+      Underline,
+      Placeholder.configure({ placeholder: "Empieza a escribir..." }),
     ],
     content: initialContenido ?? undefined,
     onUpdate: () => {
-      setGuardado(false);
+      setSaveState("dirty");
       scheduleSave();
     },
     editorProps: {
-      attributes: { class: "tiptap" },
+      attributes: {
+        class: "tiptap",
+        spellcheck: "true",
+      },
     },
   });
 
+  const saveNow = useCallback(async () => {
+    if (!editor) return;
+
+    const { titulo: currentTitle } = latestRef.current;
+    setSaveState("saving");
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/paginas/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: currentTitle.trim() || "Sin título",
+          contenido: editor.getJSON(),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? `Error ${res.status}`);
+      }
+
+      setSaveState("saved");
+    } catch (err) {
+      setSaveState("error");
+      setError(err instanceof Error ? err.message : "No se pudo guardar");
+    }
+  }, [editor, id]);
+
   const scheduleSave = useCallback(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      if (!editor) return;
-      const { titulo: t, icono: ic } = latestRef.current;
-      setGuardando(true);
-      try {
-        await fetch(`/api/paginas/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            titulo: t || "Sin título",
-            icono: ic || null,
-            contenido: editor.getJSON(),
-          }),
-        });
-        setGuardado(true);
-      } catch {
-        // silently ignore, usuario puede seguir editando
-      } finally {
-        setGuardando(false);
-      }
-    }, 1000);
-  }, [editor, id]);
+    saveTimer.current = setTimeout(() => {
+      void saveNow();
+    }, 900);
+  }, [saveNow]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, []);
 
   function handleTituloChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setTitulo(e.target.value);
-    setGuardado(false);
+    setSaveState("dirty");
     scheduleSave();
     autoResize(e.currentTarget);
   }
 
-  function handleIconoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value.slice(-2); // solo el último emoji
-    setIcono(val);
-    setGuardado(false);
-    scheduleSave();
-  }
-
   function autoResize(el: HTMLTextAreaElement) {
     el.style.height = "auto";
-    el.style.height = el.scrollHeight + "px";
+    el.style.height = `${el.scrollHeight}px`;
   }
 
   async function handleDelete() {
     setDeletingPage(true);
+    setError(null);
+
     try {
-      await fetch(`/api/paginas/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/paginas/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? `Error ${res.status}`);
+      }
+
       router.push("/paginas");
       router.refresh();
-    } catch {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo eliminar");
       setDeletingPage(false);
     }
   }
@@ -111,204 +143,97 @@ export function PaginaEditor({ id, initialTitulo, initialIcono, initialContenido
   if (!editor) return null;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Barra superior */}
-      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white/90 px-6 py-2.5 backdrop-blur-sm">
-        <Link
-          href="/paginas"
-          className="inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-900"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Páginas
-        </Link>
-
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-xs text-gray-400">
-            {guardando ? (
-              <>
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Guardando...
-              </>
-            ) : guardado ? (
-              <>
-                <Check className="h-3 w-3 text-emerald-500" />
-                Guardado
-              </>
-            ) : null}
-          </span>
-
-          <button
-            onClick={() => setShowDelete(true)}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+    <div className="min-h-screen bg-white text-gray-950">
+      <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex h-12 w-full max-w-4xl items-center justify-between px-4 sm:px-6">
+          <Link
+            href="/paginas"
+            className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-900"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            Eliminar
-          </button>
-        </div>
-      </div>
+            <ChevronLeft className="h-4 w-4" />
+            Páginas
+          </Link>
 
-      {/* Contenido de la página */}
-      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-10 md:px-12">
-        {/* Ícono */}
-        <div className="mb-3">
-          <input
-            type="text"
-            value={icono}
-            onChange={handleIconoChange}
-            placeholder="+"
-            className="w-14 rounded-lg border border-dashed border-gray-200 bg-transparent text-center text-3xl leading-none text-gray-400 focus:border-gray-300 focus:outline-none hover:border-gray-300 transition-colors py-1"
-            title="Agrega un emoji como ícono"
-          />
+          <div className="flex items-center gap-2">
+            <SaveIndicator state={saveState} error={error} />
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowActions((value) => !value)}
+                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                title="Más acciones"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+              {showActions && (
+                <div className="absolute right-0 top-9 z-30 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowActions(false);
+                      setShowDelete(true);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-400" />
+                    Eliminar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+      </header>
 
-        {/* Título */}
+      <main className="mx-auto w-full max-w-3xl px-5 pb-24 pt-12 sm:px-8 md:pt-14">
         <textarea
           value={titulo}
           onChange={handleTituloChange}
-          ref={(el) => { if (el) autoResize(el); }}
+          ref={(el) => {
+            if (el) autoResize(el);
+          }}
           placeholder="Sin título"
           rows={1}
-          className="mb-8 w-full resize-none border-0 bg-transparent text-4xl font-bold leading-tight text-gray-900 placeholder:text-gray-300 focus:outline-none"
+          className="mb-8 min-h-12 w-full resize-none border-0 bg-transparent text-4xl font-semibold leading-tight text-gray-950 outline-none placeholder:text-gray-300 sm:text-5xl"
         />
 
-        {/* Toolbar de formato */}
-        <div className="mb-4 flex flex-wrap items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 p-1.5">
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            active={editor.isActive("heading", { level: 1 })}
-            title="Título 1"
-          >
-            <Heading1 className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            active={editor.isActive("heading", { level: 2 })}
-            title="Título 2"
-          >
-            <Heading2 className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            active={editor.isActive("heading", { level: 3 })}
-            title="Título 3"
-          >
-            <Heading3 className="h-4 w-4" />
-          </ToolbarButton>
+        <SelectionMenu editor={editor} />
+        <EditorContent editor={editor} className="mt-10 min-h-[52vh]" />
+      </main>
 
-          <div className="mx-1 h-5 w-px bg-gray-300" />
-
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            active={editor.isActive("bold")}
-            title="Negrita"
-          >
-            <Bold className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            active={editor.isActive("italic")}
-            title="Cursiva"
-          >
-            <Italic className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            active={editor.isActive("underline")}
-            title="Subrayado"
-          >
-            <UnderlineIcon className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            active={editor.isActive("strike")}
-            title="Tachado"
-          >
-            <Strikethrough className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            active={editor.isActive("code")}
-            title="Código inline"
-          >
-            <Code className="h-4 w-4" />
-          </ToolbarButton>
-
-          <div className="mx-1 h-5 w-px bg-gray-300" />
-
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            active={editor.isActive("bulletList")}
-            title="Lista con viñetas"
-          >
-            <List className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            active={editor.isActive("orderedList")}
-            title="Lista numerada"
-          >
-            <ListOrdered className="h-4 w-4" />
-          </ToolbarButton>
-
-          <div className="mx-1 h-5 w-px bg-gray-300" />
-
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            active={editor.isActive("blockquote")}
-            title="Cita"
-          >
-            <Quote className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            active={editor.isActive("codeBlock")}
-            title="Bloque de código"
-          >
-            <Code2 className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
-            active={false}
-            title="Línea divisoria"
-          >
-            <Minus className="h-4 w-4" />
-          </ToolbarButton>
-        </div>
-
-        {/* Editor TipTap */}
-        <EditorContent editor={editor} className="min-h-[400px]" />
-      </div>
-
-      {/* Modal de confirmación de eliminación */}
       {showDelete && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setShowDelete(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/35"
+          onClick={() => {
+            if (!deletingPage) setShowDelete(false);
+          }}
         >
           <div
-            className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+            className="mx-4 w-full max-w-sm rounded-lg bg-white p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="mb-2 text-base font-semibold text-gray-900">
-              ¿Eliminar página?
-            </h3>
+            <h3 className="mb-2 text-base font-semibold text-gray-900">Eliminar página</h3>
             <p className="mb-5 text-sm text-gray-500">
-              Se eliminará &ldquo;{titulo || "Sin título"}&rdquo;. Esta acción no se puede deshacer.
+              Se eliminará "{titulo || "Sin título"}". Esta acción no se puede deshacer.
             </p>
+            {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
             <div className="flex justify-end gap-3">
               <button
+                type="button"
                 onClick={() => setShowDelete(false)}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                disabled={deletingPage}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
               >
                 Cancelar
               </button>
               <button
+                type="button"
                 onClick={handleDelete}
                 disabled={deletingPage}
                 className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition-colors hover:bg-red-700 disabled:opacity-60"
               >
                 {deletingPage && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Sí, eliminar
+                Eliminar
               </button>
             </div>
           </div>
@@ -318,7 +243,87 @@ export function PaginaEditor({ id, initialTitulo, initialIcono, initialContenido
   );
 }
 
-function ToolbarButton({
+function SelectionMenu({ editor }: { editor: NonNullable<ReturnType<typeof useEditor>> }) {
+  return (
+    <BubbleMenu
+      editor={editor}
+      updateDelay={80}
+      shouldShow={({ editor: currentEditor, state }) => {
+        return currentEditor.isFocused && !state.selection.empty;
+      }}
+      className="flex items-center gap-0.5 rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+    >
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        active={editor.isActive("bold")}
+        title="Negrita"
+      >
+        <Bold className="h-4 w-4" />
+      </MenuButton>
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        active={editor.isActive("italic")}
+        title="Cursiva"
+      >
+        <Italic className="h-4 w-4" />
+      </MenuButton>
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        active={editor.isActive("underline")}
+        title="Subrayado"
+      >
+        <UnderlineIcon className="h-4 w-4" />
+      </MenuButton>
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+        active={editor.isActive("strike")}
+        title="Tachado"
+      >
+        <Strikethrough className="h-4 w-4" />
+      </MenuButton>
+      <div className="mx-1 h-5 w-px bg-gray-200" />
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleCode().run()}
+        active={editor.isActive("code")}
+        title="Código"
+      >
+        <Code className="h-4 w-4" />
+      </MenuButton>
+    </BubbleMenu>
+  );
+}
+
+function SaveIndicator({ state, error }: { state: SaveState; error: string | null }) {
+  if (state === "saving") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-500">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Guardando
+      </span>
+    );
+  }
+
+  if (state === "error") {
+    return (
+      <span className="inline-flex max-w-[160px] items-center truncate rounded-full bg-red-50 px-2.5 py-1 text-xs text-red-600">
+        {error ?? "Error"}
+      </span>
+    );
+  }
+
+  if (state === "dirty") {
+    return <span className="rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-400">Sin guardar</span>;
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700">
+      <Check className="h-3 w-3" />
+      Guardado
+    </span>
+  );
+}
+
+function MenuButton({
   children,
   onClick,
   active,
@@ -335,10 +340,10 @@ function ToolbarButton({
       onClick={onClick}
       title={title}
       className={[
-        "rounded-md p-1.5 transition-colors",
+        "flex h-8 w-8 flex-none items-center justify-center rounded-md transition-colors",
         active
-          ? "bg-blue-100 text-blue-700"
-          : "text-gray-500 hover:bg-gray-200 hover:text-gray-900",
+          ? "bg-gray-900 text-white"
+          : "text-gray-500 hover:bg-gray-100 hover:text-gray-950",
       ].join(" ")}
     >
       {children}
