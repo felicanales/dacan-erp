@@ -14,7 +14,11 @@ type ProductoResumen = {
   nombre: string;
   sku: string;
   estado: string;
-  stockActual: number;
+  inventario: {
+    stockDisponible: number;
+    stockEnTransito: number;
+    stockMinimo: number;
+  } | null;
   proveedor: ProveedorResumen | null;
 };
 
@@ -266,7 +270,9 @@ export function ContainerActions({
                           <span className="font-mono text-xs text-gray-500">{producto.sku}</span>
                         </div>
                         <span className="text-xs text-gray-500">
-                          {producto.proveedor?.nombre ?? "Sin proveedor"} / Stock {producto.stockActual}
+                          {producto.proveedor?.nombre ?? "Sin proveedor"} / Disp.{" "}
+                          {producto.inventario?.stockDisponible ?? 0} / Trans.{" "}
+                          {producto.inventario?.stockEnTransito ?? 0}
                         </span>
                       </li>
                     ))}

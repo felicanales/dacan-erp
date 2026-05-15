@@ -3,7 +3,6 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import Underline from "@tiptap/extension-underline";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -39,10 +38,10 @@ export function PaginaEditor({ id, initialTitulo, initialIcono, initialContenido
   }, [titulo, icono]);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder: "Escribe algo aquí..." }),
-      Underline,
     ],
     content: initialContenido ?? undefined,
     onUpdate: () => {

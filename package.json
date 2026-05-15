@@ -7,6 +7,8 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:backend": "npm run dev --prefix backend",
     "install:all": "npm install --prefix frontend && npm install --prefix backend",
+    "security:audit": "npm --prefix backend audit --audit-level=moderate && npm --prefix frontend audit --audit-level=moderate",
+    "security:audit:prod": "npm --prefix backend audit --omit=dev --audit-level=moderate && npm --prefix frontend audit --omit=dev --audit-level=moderate",
     "db:migrate": "npm run db:migrate --prefix backend",
     "db:studio": "npm run db:studio --prefix backend",
     "db:seed": "npm run db:seed --prefix backend"

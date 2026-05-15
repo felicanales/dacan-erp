@@ -15,18 +15,30 @@ async function verifyAuth(req: NextRequest) {
 }
 
 const paginaSchema = z.object({
+  nombre: z.string().nullable().optional(),
   titulo: z.string().min(1).default("Sin título"),
   icono: z.string().nullable().optional(),
   contenido: z.unknown().optional(),
+  carpetaId: z.string().nullable().optional(),
 });
 
 export async function GET(req: NextRequest) {
   const claims = await verifyAuth(req);
   if (!claims) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
+  const carpetaId = req.nextUrl.searchParams.get("carpetaId");
+
+  const where =
+    carpetaId === "ninguna"
+      ? { carpetaId: null }
+      : carpetaId
+        ? { carpetaId }
+        : {};
+
   const paginas = await prisma.pagina.findMany({
+    where,
     orderBy: { updatedAt: "desc" },
-    select: { id: true, titulo: true, icono: true, createdAt: true, updatedAt: true },
+    select: { id: true, nombre: true, titulo: true, icono: true, carpetaId: true, createdAt: true, updatedAt: true },
   });
 
   return NextResponse.json(paginas);
@@ -47,8 +59,10 @@ export async function POST(req: NextRequest) {
 
   const pagina = await prisma.pagina.create({
     data: {
+      nombre: parsed.data.nombre ?? null,
       titulo: parsed.data.titulo,
       icono: parsed.data.icono ?? null,
+      carpetaId: parsed.data.carpetaId ?? null,
     },
   });
 

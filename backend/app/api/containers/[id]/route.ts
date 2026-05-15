@@ -3,6 +3,7 @@ import { verifyToken } from "@clerk/backend";
 import { prisma } from "@/src/lib/prisma";
 import { z } from "zod";
 import type { ContainerEstado } from "@prisma/client";
+import { confirmContainerTransitStock } from "@/src/lib/inventory";
 
 async function verifyAuth(req: NextRequest) {
   const authHeader = req.headers.get("Authorization");
@@ -64,6 +65,7 @@ const cambioEstadoSchema = z.object({
     "descargado",
   ]),
   nota: z.string().optional(),
+  confirmarStockTransito: z.boolean().optional(),
 });
 
 export async function GET(
@@ -85,7 +87,13 @@ export async function GET(
           nombre: true,
           sku: true,
           estado: true,
-          stockActual: true,
+          inventario: {
+            select: {
+              stockDisponible: true,
+              stockEnTransito: true,
+              stockMinimo: true,
+            },
+          },
           proveedor: { select: { id: true, nombre: true, pais: true } },
         },
       },
@@ -121,7 +129,7 @@ export async function PUT(
   const body = await req.json();
 
   // Cambio de estado (PATCH semántico vía PUT con campo "estado")
-  if ("estado" in body && Object.keys(body).length <= 2) {
+  if ("estado" in body && Object.keys(body).length <= 3) {
     const parsed = cambioEstadoSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
@@ -155,6 +163,14 @@ export async function PUT(
           nota: parsed.data.nota ?? null,
         },
       });
+
+      if (nuevoEstado === "descargado" && parsed.data.confirmarStockTransito) {
+        await confirmContainerTransitStock(
+          tx,
+          id,
+          parsed.data.nota ?? "Stock confirmado por descarga de container"
+        );
+      }
 
       return updated;
     });

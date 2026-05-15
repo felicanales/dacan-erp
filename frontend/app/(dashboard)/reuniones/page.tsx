@@ -26,8 +26,6 @@ type Reunion = {
   id: string;
   titulo: string;
   fecha: string;
-  duracionMinutos: number | null;
-  tipo: string;
   estado: ReunionEstado;
   participantes: { usuario: Usuario }[];
 };
@@ -75,7 +73,7 @@ export default async function ReunionesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Reuniones</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Agenda, actas, notas IA y acuerdos del equipo.
+            Notas IA y seguimiento de reuniones del equipo.
           </p>
         </div>
         <Link
@@ -111,7 +109,7 @@ export default async function ReunionesPage() {
           <CalendarDays className="h-8 w-8 text-gray-400" />
           <p className="mt-4 text-sm font-medium text-gray-900">No hay reuniones</p>
           <p className="mt-1 text-sm text-gray-500">
-            Agenda una reunion para registrar agenda, notas IA, acta y acuerdos.
+            Crea una reunion para guardar sus datos basicos y notas IA.
           </p>
         </div>
       ) : (
@@ -175,9 +173,6 @@ export default async function ReunionesPage() {
                       >
                         {reunion.titulo}
                       </Link>
-                      <span className="mt-0.5 block text-xs text-gray-500">
-                        {reunion.duracionMinutos ? `${reunion.duracionMinutos} min` : "Sin duracion"}
-                      </span>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm text-gray-500">
                       {formatFecha(reunion.fecha)}

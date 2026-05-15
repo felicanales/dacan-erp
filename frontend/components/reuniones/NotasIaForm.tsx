@@ -44,9 +44,9 @@ export function NotasIaForm({ reunionId, defaultNotasIa }: Props) {
   return (
     <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
       <div>
-        <h2 className="text-sm font-semibold text-gray-900">Notas de IA</h2>
+        <h2 className="text-sm font-semibold text-gray-900">Notas IA</h2>
         <p className="mt-1 text-xs text-gray-500">
-          Espacio para transcripcion, resumen automatico o apuntes generados por IA.
+          Espacio unico para separar transcripcion, resumen, decisiones, pendientes y observaciones.
         </p>
       </div>
       <div className="space-y-1.5">
@@ -58,7 +58,7 @@ export function NotasIaForm({ reunionId, defaultNotasIa }: Props) {
           className="min-h-44 resize-y border-gray-200 bg-white text-sm text-gray-900 focus-visible:ring-1 focus-visible:ring-blue-500"
           value={notasIa}
           onChange={(event) => setNotasIa(event.target.value)}
-          placeholder="La IA puede dejar aqui la transcripcion, puntos clave, decisiones y pendientes detectados."
+          placeholder={"Transcripcion:\n\nResumen:\n\nDecisiones:\n\nPendientes:\n\nObservaciones:"}
         />
       </div>
       {error && (

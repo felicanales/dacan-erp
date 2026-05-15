@@ -2,8 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarDays, ChevronLeft, ExternalLink } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
-import { ReunionForm } from "@/components/reuniones/ReunionForm";
-import { ActaForm } from "@/components/reuniones/ActaForm";
 import { NotasIaForm } from "@/components/reuniones/NotasIaForm";
 
 type Usuario = {
@@ -17,16 +15,9 @@ type Reunion = {
   id: string;
   titulo: string;
   fecha: string;
-  duracionMinutos: number | null;
-  tipo: "interna" | "con_proveedor" | "con_cliente";
   estado: "programada" | "completada" | "cancelada";
   linkVideoCall: string | null;
-  agenda: string | null;
-  acta: string | null;
-  acuerdos: string | null;
   notasIa: string | null;
-  actaEnviada: boolean;
-  actaEnviadaAt: string | null;
   participantes: { usuario: Usuario }[];
 };
 
@@ -42,12 +33,6 @@ const ESTADO_BADGE: Record<Reunion["estado"], string> = {
   cancelada: "bg-gray-100 text-gray-600 border-gray-200",
 };
 
-const TIPO_LABELS: Record<Reunion["tipo"], string> = {
-  interna: "Interna",
-  con_proveedor: "Con proveedor",
-  con_cliente: "Con cliente",
-};
-
 function formatFecha(iso: string) {
   return new Date(iso).toLocaleString("es-CL", {
     day: "2-digit",
@@ -58,25 +43,11 @@ function formatFecha(iso: string) {
   });
 }
 
-function toDateTimeLocal(iso: string) {
-  const date = new Date(iso);
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 16);
-}
-
 async function getReunion(id: string): Promise<Reunion | null> {
   try {
     return await apiFetch<Reunion>(`/api/reuniones/${id}`);
   } catch {
     return null;
-  }
-}
-
-async function getUsuarios(): Promise<Usuario[]> {
-  try {
-    return await apiFetch<Usuario[]>("/api/usuarios");
-  } catch {
-    return [];
   }
 }
 
@@ -86,7 +57,7 @@ export default async function ReunionDetallePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [reunion, usuarios] = await Promise.all([getReunion(id), getUsuarios()]);
+  const reunion = await getReunion(id);
 
   if (!reunion) notFound();
 
@@ -116,8 +87,6 @@ export default async function ReunionDetallePage({
             <CalendarDays className="h-4 w-4" />
             {formatFecha(reunion.fecha)}
           </span>
-          <span>{TIPO_LABELS[reunion.tipo]}</span>
-          {reunion.duracionMinutos && <span>{reunion.duracionMinutos} min</span>}
           {reunion.linkVideoCall && (
             <Link
               href={reunion.linkVideoCall}
@@ -148,45 +117,7 @@ export default async function ReunionDetallePage({
         </div>
       </section>
 
-      <section className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
-        <h2 className="mb-3 text-sm font-semibold text-gray-900">Agenda</h2>
-        {reunion.agenda ? (
-          <div className="whitespace-pre-wrap text-sm leading-6 text-gray-700">
-            {reunion.agenda}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500">Sin agenda registrada.</p>
-        )}
-      </section>
-
       <NotasIaForm reunionId={reunion.id} defaultNotasIa={reunion.notasIa} />
-
-      <ActaForm
-        reunionId={reunion.id}
-        defaultActa={reunion.acta}
-        defaultAcuerdos={reunion.acuerdos}
-        actaEnviada={reunion.actaEnviada}
-        actaEnviadaAt={reunion.actaEnviadaAt}
-      />
-
-      <div id="editar">
-        <ReunionForm
-          usuarios={usuarios}
-          reunionId={reunion.id}
-          defaultValues={{
-            titulo: reunion.titulo,
-            fecha: toDateTimeLocal(reunion.fecha),
-            duracionMinutos: reunion.duracionMinutos
-              ? String(reunion.duracionMinutos)
-              : "",
-            tipo: reunion.tipo,
-            estado: reunion.estado,
-            linkVideoCall: reunion.linkVideoCall ?? "",
-            agenda: reunion.agenda ?? "",
-            participantes: reunion.participantes.map(({ usuario }) => usuario.id),
-          }}
-        />
-      </div>
     </div>
   );
 }

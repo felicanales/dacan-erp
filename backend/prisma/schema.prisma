@@ -64,16 +64,21 @@ enum TareaPrioridad {
   baja
 }
 
-enum ReunionTipo {
-  interna
-  con_proveedor
-  con_cliente
-}
-
 enum ReunionEstado {
   programada
   completada
   cancelada
+}
+
+enum InventarioMovimientoTipo {
+  ingreso_disponible
+  ingreso_transito
+  confirmacion_transito
+  salida
+  devolucion
+  merma
+  ajuste_disponible
+  ajuste_transito
 }
 
 // ─── USUARIOS Y AUTH ─────────────────────────────────────
@@ -113,8 +118,6 @@ model Producto {
   precioCosto Decimal        @db.Decimal(12, 2)
   precioB2B   Decimal        @db.Decimal(12, 2)
   precioB2C   Decimal        @db.Decimal(12, 2)
-  stockActual Int            @default(0)
-  stockMinimo Int            @default(5)
   proveedorId String?
   proveedor   Proveedor?     @relation(fields: [proveedorId], references: [id])
   containerId String?
@@ -123,22 +126,51 @@ model Producto {
   fotoPortada String?
   estado      ProductoEstado @default(disponible)
   notas       String?
+  archivadoAt DateTime?
+  archivadoMotivo String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  itemsPedido ItemPedido[]
-  inventario  Inventario?
+  itemsPedido           ItemPedido[]
+  inventario            Inventario?
+  movimientosInventario InventarioMovimiento[]
 }
 
 // ─── INVENTARIO ──────────────────────────────────────────
 
 model Inventario {
-  id         String   @id @default(cuid())
-  productoId String   @unique
-  producto   Producto @relation(fields: [productoId], references: [id])
-  cantidad   Int      @default(0)
-  ubicacion  String?
-  updatedAt  DateTime @updatedAt
+  id              String   @id @default(cuid())
+  productoId      String   @unique
+  producto        Producto @relation(fields: [productoId], references: [id])
+  stockDisponible Int      @default(0)
+  stockEnTransito Int      @default(0)
+  stockMinimo     Int      @default(5)
+  ubicacion       String?
+  updatedAt       DateTime @updatedAt
+
+  movimientos InventarioMovimiento[]
+}
+
+model InventarioMovimiento {
+  id                       String                   @id @default(cuid())
+  inventarioId             String
+  inventario               Inventario               @relation(fields: [inventarioId], references: [id])
+  productoId               String
+  producto                 Producto                 @relation(fields: [productoId], references: [id])
+  containerId              String?
+  container                Container?               @relation(fields: [containerId], references: [id])
+  tipo                     InventarioMovimientoTipo
+  cantidad                 Int
+  stockDisponibleAntes     Int
+  stockDisponibleDespues   Int
+  stockEnTransitoAntes     Int
+  stockEnTransitoDespues   Int
+  nota                     String?
+  createdAt                DateTime                 @default(now())
+
+  @@index([productoId, createdAt])
+  @@index([inventarioId, createdAt])
+  @@index([containerId])
 }
 
 // ─── PROVEEDORES ─────────────────────────────────────────
@@ -181,6 +213,7 @@ model Container {
 
   productos        Producto[]
   historialEstados ContainerHistorialEstado[]
+  movimientosInventario InventarioMovimiento[]
 }
 
 model ContainerHistorialEstado {
@@ -279,16 +312,9 @@ model Reunion {
   id              String      @id @default(cuid())
   titulo          String
   fecha           DateTime
-  duracionMinutos Int?
-  tipo            ReunionTipo @default(interna)
   estado          ReunionEstado @default(programada)
   linkVideoCall   String?
-  agenda          String?
-  acta            String?
-  acuerdos        String?
   notasIa         String?
-  actaEnviada     Boolean     @default(false)
-  actaEnviadaAt   DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -307,11 +333,23 @@ model ReunionParticipante {
 
 // ─── PÁGINAS ─────────────────────────────────────────────
 
-model Pagina {
+model CarpetaPagina {
   id        String   @id @default(cuid())
-  titulo    String   @default("Sin título")
+  nombre    String
   icono     String?
-  contenido Json?
+  paginas   Pagina[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Pagina {
+  id          String         @id @default(cuid())
+  nombre      String?
+  titulo      String         @default("Sin título")
+  icono       String?
+  contenido   Json?
+  carpetaId   String?
+  carpeta     CarpetaPagina? @relation(fields: [carpetaId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }

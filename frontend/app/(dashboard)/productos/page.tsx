@@ -22,8 +22,12 @@ type Producto = {
   precioCosto: string;
   precioB2B: string;
   precioB2C: string;
-  stockActual: number;
-  stockMinimo: number;
+  inventario: {
+    stockDisponible: number;
+    stockEnTransito: number;
+    stockMinimo: number;
+    ubicacion: string | null;
+  } | null;
   fotos: string[];
   fotoPortada: string | null;
   estado: ProductoEstado;
@@ -44,8 +48,14 @@ export default async function ProductosPage() {
   const productos = await getProductos();
   const disponibles = productos.filter((producto) => producto.estado === "disponible").length;
   const stockBajo = productos.filter(
-    (producto) => producto.stockActual <= producto.stockMinimo
+    (producto) =>
+      (producto.inventario?.stockDisponible ?? 0) <=
+      (producto.inventario?.stockMinimo ?? 0)
   ).length;
+  const enTransito = productos.reduce(
+    (total, producto) => total + (producto.inventario?.stockEnTransito ?? 0),
+    0
+  );
   const categorias = new Set(productos.map((producto) => producto.categoria.id)).size;
 
   return (
@@ -74,6 +84,7 @@ export default async function ProductosPage() {
             { label: "Productos", valor: productos.length },
             { label: "Disponibles", valor: disponibles },
             { label: "Stock bajo", valor: stockBajo },
+            { label: "En transito", valor: enTransito },
             { label: "Categorias", valor: categorias },
           ].map(({ label, valor }) => (
             <div key={label} className="rounded-lg border border-gray-200 bg-white p-4">
@@ -107,6 +118,9 @@ export default async function ProductosPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {productos.map((producto) => {
             const cover = getCoverImage(producto.fotos, producto.fotoPortada);
+            const stockDisponible = producto.inventario?.stockDisponible ?? 0;
+            const stockEnTransito = producto.inventario?.stockEnTransito ?? 0;
+            const stockMinimo = producto.inventario?.stockMinimo ?? 0;
             return (
               <Link
                 key={producto.id}
@@ -137,10 +151,10 @@ export default async function ProductosPage() {
                     <span
                       className={cn(
                         "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
-                        stockBadgeClass(producto.stockActual, producto.stockMinimo)
+                        stockBadgeClass(stockDisponible, stockMinimo)
                       )}
                     >
-                      {stockLabel(producto.stockActual, producto.stockMinimo)}
+                      {stockLabel(stockDisponible, stockMinimo)}
                     </span>
                   </div>
                 </div>
@@ -169,7 +183,12 @@ export default async function ProductosPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-400">Stock</p>
-                      <p className="mt-0.5 font-medium text-gray-900">{producto.stockActual}</p>
+                      <p className="mt-0.5 font-medium text-gray-900">{stockDisponible}</p>
+                      {stockEnTransito > 0 && (
+                        <p className="mt-0.5 text-[11px] text-blue-600">
+                          +{stockEnTransito} en transito
+                        </p>
+                      )}
                     </div>
                   </div>
 

@@ -26,7 +26,11 @@ type ProductoResumen = {
   nombre: string;
   sku: string;
   estado: string;
-  stockActual: number;
+  inventario: {
+    stockDisponible: number;
+    stockEnTransito: number;
+    stockMinimo: number;
+  } | null;
   proveedor: ProveedorResumen | null;
 };
 
@@ -246,8 +250,16 @@ export default async function ContainerDetallePage({
                         </Link>
                       )}
                       <span>
-                        Stock:{" "}
-                        <span className="font-medium text-gray-900">{producto.stockActual}</span>
+                        Disponible:{" "}
+                        <span className="font-medium text-gray-900">
+                          {producto.inventario?.stockDisponible ?? 0}
+                        </span>
+                      </span>
+                      <span>
+                        Transito:{" "}
+                        <span className="font-medium text-gray-900">
+                          {producto.inventario?.stockEnTransito ?? 0}
+                        </span>
                       </span>
                     </div>
                   </li>

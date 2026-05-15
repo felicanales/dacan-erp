@@ -33,7 +33,7 @@ export default async function NuevaReunionPage() {
         </Link>
         <h1 className="text-2xl font-semibold text-gray-900">Nueva reunion</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Agenda una reunion y deja lista la pauta para el equipo.
+          Registra los datos basicos, participantes y notas IA de la reunion.
         </p>
       </div>
 

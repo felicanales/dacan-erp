@@ -58,8 +58,6 @@ async function main() {
       precioCosto: 120,
       precioB2B: 189990,
       precioB2C: 249990,
-      stockActual: 8,
-      stockMinimo: 3,
       proveedorId: proveedor.id,
       fotos: [],
       fotoPortada: null,
@@ -67,6 +65,41 @@ async function main() {
       notas: "Producto de muestra para validar el catalogo.",
     },
   });
+
+  const inventario = await prisma.inventario.upsert({
+    where: { productoId: producto.id },
+    update: {
+      stockMinimo: 3,
+      ubicacion: "Bodega principal",
+    },
+    create: {
+      productoId: producto.id,
+      stockDisponible: 8,
+      stockEnTransito: 0,
+      stockMinimo: 3,
+      ubicacion: "Bodega principal",
+    },
+  });
+
+  const movimientos = await prisma.inventarioMovimiento.count({
+    where: { productoId: producto.id },
+  });
+
+  if (movimientos === 0) {
+    await prisma.inventarioMovimiento.create({
+      data: {
+        inventarioId: inventario.id,
+        productoId: producto.id,
+        tipo: "ingreso_disponible",
+        cantidad: inventario.stockDisponible,
+        stockDisponibleAntes: 0,
+        stockDisponibleDespues: inventario.stockDisponible,
+        stockEnTransitoAntes: 0,
+        stockEnTransitoDespues: inventario.stockEnTransito,
+        nota: "Stock inicial de seed",
+      },
+    });
+  }
 
   console.log("Seed completado:", {
     categorias: categorias.length,

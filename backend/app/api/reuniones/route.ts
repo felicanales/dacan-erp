@@ -7,11 +7,8 @@ import { ensureTeamUsers } from "@/src/lib/team-users";
 const reunionSchema = z.object({
   titulo: z.string().min(3),
   fecha: z.string().datetime({ offset: true }),
-  duracionMinutos: z.number().int().positive().optional().nullable(),
-  tipo: z.enum(["interna", "con_proveedor", "con_cliente"]).default("interna"),
   estado: z.enum(["programada", "completada", "cancelada"]).default("programada"),
   linkVideoCall: z.string().url().optional().nullable().or(z.literal("")),
-  agenda: z.string().optional().nullable(),
   notasIa: z.string().optional().nullable(),
   participantes: z.array(z.string()).min(1),
 });
@@ -89,11 +86,8 @@ export async function POST(req: NextRequest) {
     data: {
       titulo: data.titulo,
       fecha: new Date(data.fecha),
-      duracionMinutos: data.duracionMinutos ?? null,
-      tipo: data.tipo,
       estado: data.estado,
       linkVideoCall: data.linkVideoCall || null,
-      agenda: data.agenda ?? null,
       notasIa: data.notasIa ?? null,
       participantes: {
         create: participantes.map((usuarioId) => ({ usuarioId })),

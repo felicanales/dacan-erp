@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { ProductoEstado } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/src/lib/prisma";
 import { verifyAuth } from "@/src/lib/api-auth";
-
-const PRODUCTO_ESTADOS: ProductoEstado[] = [
-  "disponible",
-  "agotado",
-  "en_transito",
-  "descontinuado",
-];
+import { syncProductStatus } from "@/src/lib/inventory";
 
 const imageSchema = z.string().min(1).max(3_000_000);
 
@@ -21,13 +14,12 @@ const updateSchema = z.object({
   precioCosto: z.coerce.number().min(0).optional(),
   precioB2B: z.coerce.number().min(0).optional(),
   precioB2C: z.coerce.number().min(0).optional(),
-  stockActual: z.coerce.number().int().min(0).optional(),
   stockMinimo: z.coerce.number().int().min(0).optional(),
+  ubicacion: z.string().optional().nullable(),
   proveedorId: z.string().optional().nullable(),
   containerId: z.string().optional().nullable(),
   fotos: z.array(imageSchema).max(6).optional(),
   fotoPortada: z.string().optional().nullable(),
-  estado: z.enum(PRODUCTO_ESTADOS as [ProductoEstado, ...ProductoEstado[]]).optional(),
   notas: z.string().optional().nullable(),
 });
 
@@ -72,6 +64,57 @@ async function validateRelations({
   return null;
 }
 
+const productInclude = {
+  categoria: { select: { id: true, nombre: true, descripcion: true } },
+  proveedor: {
+    select: {
+      id: true,
+      nombre: true,
+      pais: true,
+      ciudad: true,
+      contactoNombre: true,
+      contactoEmail: true,
+    },
+  },
+  container: {
+    select: {
+      id: true,
+      numero: true,
+      estado: true,
+      fechaArriboEstimada: true,
+      puertoOrigen: true,
+      puertoDestino: true,
+    },
+  },
+  inventario: {
+    select: {
+      id: true,
+      stockDisponible: true,
+      stockEnTransito: true,
+      stockMinimo: true,
+      ubicacion: true,
+      updatedAt: true,
+      movimientos: {
+        orderBy: { createdAt: "desc" },
+        take: 12,
+        select: {
+          id: true,
+          tipo: true,
+          cantidad: true,
+          stockDisponibleAntes: true,
+          stockDisponibleDespues: true,
+          stockEnTransitoAntes: true,
+          stockEnTransitoDespues: true,
+          nota: true,
+          createdAt: true,
+          container: { select: { id: true, numero: true } },
+        },
+      },
+    },
+  },
+  _count: { select: { itemsPedido: true, movimientosInventario: true } },
+} as const;
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -84,31 +127,7 @@ export async function GET(
   const { id } = await params;
   const producto = await prisma.producto.findUnique({
     where: { id },
-    include: {
-      categoria: { select: { id: true, nombre: true, descripcion: true } },
-      proveedor: {
-        select: {
-          id: true,
-          nombre: true,
-          pais: true,
-          ciudad: true,
-          contactoNombre: true,
-          contactoEmail: true,
-        },
-      },
-      container: {
-        select: {
-          id: true,
-          numero: true,
-          estado: true,
-          fechaArriboEstimada: true,
-          puertoOrigen: true,
-          puertoDestino: true,
-        },
-      },
-      inventario: { select: { id: true, cantidad: true, ubicacion: true, updatedAt: true } },
-      _count: { select: { itemsPedido: true } },
-    },
+    include: productInclude,
   });
 
   if (!producto) {
@@ -128,7 +147,10 @@ export async function PUT(
   }
 
   const { id } = await params;
-  const existing = await prisma.producto.findUnique({ where: { id } });
+  const existing = await prisma.producto.findUnique({
+    where: { id },
+    include: { inventario: true },
+  });
   if (!existing) {
     return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
   }
@@ -158,6 +180,16 @@ export async function PUT(
     return NextResponse.json({ error: relationError }, { status: 400 });
   }
 
+  if (
+    containerId === null &&
+    (existing.inventario?.stockEnTransito ?? 0) > 0
+  ) {
+    return NextResponse.json(
+      { error: "No puedes quitar el container mientras exista stock en transito" },
+      { status: 409 }
+    );
+  }
+
   const imageUpdate =
     data.fotos !== undefined
       ? normalizeProductImages(data.fotos, data.fotoPortada)
@@ -166,29 +198,53 @@ export async function PUT(
         : undefined;
 
   try {
-    const producto = await prisma.producto.update({
-      where: { id },
-      data: {
-        ...(data.sku !== undefined && { sku: data.sku.trim() }),
-        ...(data.nombre !== undefined && { nombre: data.nombre.trim() }),
-        ...(data.descripcion !== undefined && {
-          descripcion: data.descripcion?.trim() || null,
-        }),
-        ...(data.categoriaId !== undefined && { categoriaId: data.categoriaId }),
-        ...(data.precioCosto !== undefined && { precioCosto: data.precioCosto }),
-        ...(data.precioB2B !== undefined && { precioB2B: data.precioB2B }),
-        ...(data.precioB2C !== undefined && { precioB2C: data.precioB2C }),
-        ...(data.stockActual !== undefined && { stockActual: data.stockActual }),
-        ...(data.stockMinimo !== undefined && { stockMinimo: data.stockMinimo }),
-        ...(proveedorId !== undefined && { proveedorId }),
-        ...(containerId !== undefined && { containerId }),
-        ...(imageUpdate !== undefined && {
-          fotos: imageUpdate.fotos,
-          fotoPortada: imageUpdate.fotoPortada,
-        }),
-        ...(data.estado !== undefined && { estado: data.estado }),
-        ...(data.notas !== undefined && { notas: data.notas?.trim() || null }),
-      },
+    const productoId = await prisma.$transaction(async (tx) => {
+      await tx.producto.update({
+        where: { id },
+        data: {
+          ...(data.sku !== undefined && { sku: data.sku.trim() }),
+          ...(data.nombre !== undefined && { nombre: data.nombre.trim() }),
+          ...(data.descripcion !== undefined && {
+            descripcion: data.descripcion?.trim() || null,
+          }),
+          ...(data.categoriaId !== undefined && { categoriaId: data.categoriaId }),
+          ...(data.precioCosto !== undefined && { precioCosto: data.precioCosto }),
+          ...(data.precioB2B !== undefined && { precioB2B: data.precioB2B }),
+          ...(data.precioB2C !== undefined && { precioB2C: data.precioB2C }),
+          ...(proveedorId !== undefined && { proveedorId }),
+          ...(containerId !== undefined && { containerId }),
+          ...(imageUpdate !== undefined && {
+            fotos: imageUpdate.fotos,
+            fotoPortada: imageUpdate.fotoPortada,
+          }),
+          ...(data.notas !== undefined && { notas: data.notas?.trim() || null }),
+        },
+      });
+
+      if (data.stockMinimo !== undefined || data.ubicacion !== undefined) {
+        await tx.inventario.upsert({
+          where: { productoId: id },
+          create: {
+            productoId: id,
+            stockDisponible: 0,
+            stockEnTransito: 0,
+            stockMinimo: data.stockMinimo ?? 5,
+            ubicacion: data.ubicacion?.trim() || null,
+          },
+          update: {
+            ...(data.stockMinimo !== undefined && { stockMinimo: data.stockMinimo }),
+            ...(data.ubicacion !== undefined && { ubicacion: data.ubicacion?.trim() || null }),
+          },
+        });
+      }
+
+      await syncProductStatus(tx, id);
+      return id;
+    });
+
+    const producto = await prisma.producto.findUnique({
+      where: { id: productoId },
+      include: productInclude,
     });
 
     return NextResponse.json(producto);
@@ -216,23 +272,24 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const existing = await prisma.producto.findUnique({
-    where: { id },
-    include: { _count: { select: { itemsPedido: true } } },
-  });
+  const existing = await prisma.producto.findUnique({ where: { id } });
 
   if (!existing) {
     return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
   }
 
-  if (existing._count.itemsPedido > 0) {
-    return NextResponse.json(
-      { error: "No se puede eliminar un producto con pedidos asociados" },
-      { status: 409 }
-    );
+  if (existing.archivadoAt) {
+    return NextResponse.json({ ok: true });
   }
 
-  await prisma.producto.delete({ where: { id } });
+  await prisma.producto.update({
+    where: { id },
+    data: {
+      archivadoAt: new Date(),
+      archivadoMotivo: "Archivado desde modulo de productos",
+      estado: "descontinuado",
+    },
+  });
 
   return NextResponse.json({ ok: true });
 }

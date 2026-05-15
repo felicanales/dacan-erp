@@ -14,8 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { ProductoFormValues, ProductoOptions, ProductoEstado } from "./types";
-import { PRODUCTO_ESTADO_LABELS } from "./producto-utils";
+import type { ProductoFormValues, ProductoOptions } from "./types";
 
 const NONE_VALUE = "__none";
 const MAX_IMAGES = 6;
@@ -25,13 +24,6 @@ const inputClass =
   "h-9 w-full border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500";
 const labelClass = "text-sm font-medium text-gray-900";
 const panelClass = "space-y-4 rounded-lg border border-gray-200 bg-white p-4 sm:p-5";
-
-const ESTADOS: ProductoEstado[] = [
-  "disponible",
-  "agotado",
-  "en_transito",
-  "descontinuado",
-];
 
 type ProductFormProps = {
   options: ProductoOptions;
@@ -68,13 +60,14 @@ export function ProductForm({ options, defaultValues, productoId }: ProductFormP
     precioCosto: defaultValues?.precioCosto ?? "",
     precioB2B: defaultValues?.precioB2B ?? "",
     precioB2C: defaultValues?.precioB2C ?? "",
-    stockActual: defaultValues?.stockActual ?? "0",
+    stockDisponible: defaultValues?.stockDisponible ?? "0",
+    stockEnTransito: defaultValues?.stockEnTransito ?? "0",
     stockMinimo: defaultValues?.stockMinimo ?? "5",
+    ubicacion: defaultValues?.ubicacion ?? "",
     proveedorId: defaultValues?.proveedorId ?? "",
     containerId: defaultValues?.containerId ?? "",
     fotos: defaultValues?.fotos ?? [],
     fotoPortada: defaultValues?.fotoPortada ?? defaultValues?.fotos?.[0] ?? "",
-    estado: defaultValues?.estado ?? "disponible",
     notas: defaultValues?.notas ?? "",
   });
 
@@ -141,20 +134,28 @@ export function ProductForm({ options, defaultValues, productoId }: ProductFormP
     try {
       const url = productoId ? `/api/productos/${productoId}` : "/api/productos";
       const method = productoId ? "PUT" : "POST";
+      const payload = {
+        ...form,
+        precioCosto: Number(form.precioCosto || 0),
+        precioB2B: Number(form.precioB2B || 0),
+        precioB2C: Number(form.precioB2C || 0),
+        stockDisponible: Number(form.stockDisponible || 0),
+        stockEnTransito: Number(form.stockEnTransito || 0),
+        stockMinimo: Number(form.stockMinimo || 0),
+        proveedorId: form.proveedorId || null,
+        containerId: form.containerId || null,
+        fotoPortada: form.fotoPortada || form.fotos[0] || null,
+      };
+
+      if (productoId) {
+        delete (payload as Partial<typeof payload>).stockDisponible;
+        delete (payload as Partial<typeof payload>).stockEnTransito;
+      }
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          precioCosto: Number(form.precioCosto || 0),
-          precioB2B: Number(form.precioB2B || 0),
-          precioB2C: Number(form.precioB2C || 0),
-          stockActual: Number(form.stockActual || 0),
-          stockMinimo: Number(form.stockMinimo || 0),
-          proveedorId: form.proveedorId || null,
-          containerId: form.containerId || null,
-          fotoPortada: form.fotoPortada || form.fotos[0] || null,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -191,22 +192,6 @@ export function ProductForm({ options, defaultValues, productoId }: ProductFormP
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="estado" className={labelClass}>Estado</Label>
-            <Select value={form.estado} onValueChange={(value) => set("estado", value as ProductoEstado)}>
-              <SelectTrigger id="estado" className={inputClass}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ESTADOS.map((estado) => (
-                  <SelectItem key={estado} value={estado}>
-                    {PRODUCTO_ESTADO_LABELS[estado]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="nombre" className={labelClass}>
               Nombre <span className="text-red-500">*</span>
             </Label>
@@ -298,19 +283,34 @@ export function ProductForm({ options, defaultValues, productoId }: ProductFormP
       </section>
 
       <section className={panelClass}>
-        <h2 className="text-sm font-semibold text-gray-900">Stock y precios</h2>
+        <h2 className="text-sm font-semibold text-gray-900">Inventario y precios</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
-          <div className="space-y-1.5">
-            <Label htmlFor="stockActual" className={labelClass}>Stock actual</Label>
-            <Input
-              id="stockActual"
-              type="number"
-              min={0}
-              className={inputClass}
-              value={form.stockActual}
-              onChange={(e) => set("stockActual", e.target.value)}
-            />
-          </div>
+          {!productoId && (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="stockDisponible" className={labelClass}>Stock disponible</Label>
+                <Input
+                  id="stockDisponible"
+                  type="number"
+                  min={0}
+                  className={inputClass}
+                  value={form.stockDisponible}
+                  onChange={(e) => set("stockDisponible", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="stockEnTransito" className={labelClass}>Stock en transito</Label>
+                <Input
+                  id="stockEnTransito"
+                  type="number"
+                  min={0}
+                  className={inputClass}
+                  value={form.stockEnTransito}
+                  onChange={(e) => set("stockEnTransito", e.target.value)}
+                />
+              </div>
+            </>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="stockMinimo" className={labelClass}>Stock minimo</Label>
             <Input
@@ -320,6 +320,16 @@ export function ProductForm({ options, defaultValues, productoId }: ProductFormP
               className={inputClass}
               value={form.stockMinimo}
               onChange={(e) => set("stockMinimo", e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="ubicacion" className={labelClass}>Ubicacion</Label>
+            <Input
+              id="ubicacion"
+              className={inputClass}
+              value={form.ubicacion}
+              onChange={(e) => set("ubicacion", e.target.value)}
+              placeholder="Ej: Bodega A"
             />
           </div>
           <div className="space-y-1.5">
@@ -366,6 +376,11 @@ export function ProductForm({ options, defaultValues, productoId }: ProductFormP
             />
           </div>
         </div>
+        {productoId && (
+          <p className="text-xs text-gray-500">
+            Los cambios de stock se registran abajo como movimientos de inventario con historial.
+          </p>
+        )}
       </section>
 
       <section className={panelClass}>

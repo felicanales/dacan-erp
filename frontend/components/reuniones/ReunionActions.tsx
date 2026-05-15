@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Eye, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -47,10 +47,10 @@ export function ReunionActions({ reunionId, titulo }: Props) {
         variant="outline"
         size="icon-sm"
         className="border-gray-200 text-gray-600 hover:text-gray-900"
-        aria-label="Editar reunion"
+        aria-label="Ver reunion"
       >
-        <Link href={`/reuniones/${reunionId}#editar`}>
-          <Pencil className="h-4 w-4" />
+        <Link href={`/reuniones/${reunionId}`}>
+          <Eye className="h-4 w-4" />
         </Link>
       </Button>
       <Button

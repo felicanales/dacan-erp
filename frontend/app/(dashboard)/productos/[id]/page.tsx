@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 import { ProductActions } from "@/components/productos/ProductActions";
 import { ProductForm } from "@/components/productos/ProductForm";
 import { ProductGallery } from "@/components/productos/ProductGallery";
+import { InventoryMovementForm } from "@/components/productos/InventoryMovementForm";
 import type {
+  InventarioMovimientoTipo,
   ProductoEstado,
   ProductoFormValues,
   ProductoOptions,
@@ -15,6 +17,7 @@ import type {
 import {
   formatCLP,
   formatUSD,
+  MOVIMIENTO_LABELS,
   PRODUCTO_ESTADO_BADGE,
   PRODUCTO_ESTADO_LABELS,
   stockBadgeClass,
@@ -30,14 +33,14 @@ type ProductoDetalle = {
   precioCosto: string;
   precioB2B: string;
   precioB2C: string;
-  stockActual: number;
-  stockMinimo: number;
   proveedorId: string | null;
   containerId: string | null;
   fotos: string[];
   fotoPortada: string | null;
   estado: ProductoEstado;
   notas: string | null;
+  archivadoAt: string | null;
+  archivadoMotivo: string | null;
   categoria: { id: string; nombre: string; descripcion: string | null };
   proveedor: {
     id: string;
@@ -57,11 +60,25 @@ type ProductoDetalle = {
   } | null;
   inventario: {
     id: string;
-    cantidad: number;
+    stockDisponible: number;
+    stockEnTransito: number;
+    stockMinimo: number;
     ubicacion: string | null;
     updatedAt: string;
+    movimientos: {
+      id: string;
+      tipo: InventarioMovimientoTipo;
+      cantidad: number;
+      stockDisponibleAntes: number;
+      stockDisponibleDespues: number;
+      stockEnTransitoAntes: number;
+      stockEnTransitoDespues: number;
+      nota: string | null;
+      createdAt: string;
+      container: { id: string; numero: string } | null;
+    }[];
   } | null;
-  _count: { itemsPedido: number };
+  _count: { itemsPedido: number; movimientosInventario: number };
 };
 
 async function getProducto(id: string): Promise<ProductoDetalle | null> {
@@ -89,13 +106,14 @@ function toFormValues(producto: ProductoDetalle): Partial<ProductoFormValues> {
     precioCosto: String(producto.precioCosto),
     precioB2B: String(producto.precioB2B),
     precioB2C: String(producto.precioB2C),
-    stockActual: String(producto.stockActual),
-    stockMinimo: String(producto.stockMinimo),
+    stockDisponible: String(producto.inventario?.stockDisponible ?? 0),
+    stockEnTransito: String(producto.inventario?.stockEnTransito ?? 0),
+    stockMinimo: String(producto.inventario?.stockMinimo ?? 5),
+    ubicacion: producto.inventario?.ubicacion ?? "",
     proveedorId: producto.proveedorId ?? "",
     containerId: producto.containerId ?? "",
     fotos: producto.fotos,
     fotoPortada: producto.fotoPortada ?? producto.fotos[0] ?? "",
-    estado: producto.estado,
     notas: producto.notas ?? "",
   };
 }
@@ -119,7 +137,9 @@ export default async function ProductoDetallePage({
 
   if (!producto) notFound();
 
-  const canDelete = producto._count.itemsPedido === 0;
+  const stockDisponible = producto.inventario?.stockDisponible ?? 0;
+  const stockEnTransito = producto.inventario?.stockEnTransito ?? 0;
+  const stockMinimo = producto.inventario?.stockMinimo ?? 0;
 
   return (
     <div className="w-full max-w-7xl space-y-8">
@@ -145,11 +165,16 @@ export default async function ProductoDetallePage({
               <span
                 className={cn(
                   "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
-                  stockBadgeClass(producto.stockActual, producto.stockMinimo)
+                  stockBadgeClass(stockDisponible, stockMinimo)
                 )}
               >
-                {stockLabel(producto.stockActual, producto.stockMinimo)}
+                {stockLabel(stockDisponible, stockMinimo)}
               </span>
+              {producto.archivadoAt && (
+                <span className="inline-flex rounded-full border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                  Archivado
+                </span>
+              )}
             </div>
             <h1 className="mt-2 text-2xl font-semibold text-gray-900">{producto.nombre}</h1>
             <p className="mt-1 font-mono text-sm text-gray-500">{producto.sku}</p>
@@ -157,7 +182,7 @@ export default async function ProductoDetallePage({
           <ProductActions
             productoId={producto.id}
             productoNombre={producto.nombre}
-            canDelete={canDelete}
+            archivado={Boolean(producto.archivadoAt)}
           />
         </div>
       </div>
@@ -198,8 +223,9 @@ export default async function ProductoDetallePage({
             <h2 className="text-sm font-semibold text-gray-900">Informacion comercial</h2>
             <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <InfoItem label="Categoria" value={producto.categoria.nombre} />
-              <InfoItem label="Stock actual" value={producto.stockActual} />
-              <InfoItem label="Stock minimo" value={producto.stockMinimo} />
+              <InfoItem label="Stock disponible" value={stockDisponible} />
+              <InfoItem label="Stock en transito" value={stockEnTransito} />
+              <InfoItem label="Stock minimo" value={stockMinimo} />
               <InfoItem
                 label="Ubicacion inventario"
                 value={producto.inventario?.ubicacion ?? "-"}
@@ -249,6 +275,85 @@ export default async function ProductoDetallePage({
           <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-700">
             {producto.notas || "Sin notas internas."}
           </p>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(360px,0.75fr)_minmax(0,1fr)]">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-gray-900">Movimiento de inventario</h2>
+          <p className="mt-1 text-xs text-gray-500">
+            Todo cambio de stock queda registrado en el historial.
+          </p>
+          <div className="mt-4">
+            <InventoryMovementForm
+              productoId={producto.id}
+              stockDisponible={stockDisponible}
+              stockEnTransito={stockEnTransito}
+              containerId={producto.containerId}
+              disabled={Boolean(producto.archivadoAt)}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-gray-900">Historial de inventario</h2>
+          {producto.inventario?.movimientos.length ? (
+            <ol className="mt-4 divide-y divide-gray-200">
+              {producto.inventario.movimientos.map((movimiento) => (
+                <li key={movimiento.id} className="py-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {MOVIMIENTO_LABELS[movimiento.tipo]}
+                        <span className="ml-2 font-mono text-xs text-gray-500">
+                          {movimiento.cantidad > 0 ? "+" : ""}
+                          {movimiento.cantidad}
+                        </span>
+                      </p>
+                      {movimiento.container && (
+                        <Link
+                          href={`/containers/${movimiento.container.id}`}
+                          className="mt-0.5 inline-block font-mono text-xs text-gray-500 hover:text-blue-600"
+                        >
+                          {movimiento.container.numero}
+                        </Link>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      {new Date(movimiento.createdAt).toLocaleDateString("es-CL", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-gray-500">
+                    <span>
+                      Disponible: {movimiento.stockDisponibleAntes} /{" "}
+                      <strong className="font-medium text-gray-900">
+                        {movimiento.stockDisponibleDespues}
+                      </strong>
+                    </span>
+                    <span>
+                      Transito: {movimiento.stockEnTransitoAntes} /{" "}
+                      <strong className="font-medium text-gray-900">
+                        {movimiento.stockEnTransitoDespues}
+                      </strong>
+                    </span>
+                  </div>
+                  {movimiento.nota && (
+                    <p className="mt-2 whitespace-pre-wrap text-xs text-gray-500">
+                      {movimiento.nota}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mt-4 text-sm text-gray-500">Sin movimientos registrados.</p>
+          )}
         </div>
       </section>
 

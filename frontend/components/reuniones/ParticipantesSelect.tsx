@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -17,6 +17,7 @@ type ParticipantesSelectProps = {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
   onUsuarioCreated: (usuario: Usuario) => void;
+  onUsuarioDeleted: (usuarioId: string) => void;
 };
 
 export function ParticipantesSelect({
@@ -24,8 +25,10 @@ export function ParticipantesSelect({
   selectedIds,
   onChange,
   onUsuarioCreated,
+  onUsuarioDeleted,
 }: ParticipantesSelectProps) {
   const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newUser, setNewUser] = useState({
     nombre: "",
@@ -38,6 +41,33 @@ export function ParticipantesSelect({
       onChange(selectedIds.filter((selectedId) => selectedId !== id));
     } else {
       onChange([...selectedIds, id]);
+    }
+  }
+
+  async function deleteUsuario(usuario: Usuario) {
+    const confirmed = window.confirm(
+      `Eliminar participante "${usuario.nombre}"? Ya no aparecera para nuevas reuniones.`
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setDeletingId(usuario.id);
+    try {
+      const res = await fetch(`/api/usuarios/${usuario.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Error al eliminar participante");
+      }
+
+      onChange(selectedIds.filter((selectedId) => selectedId !== usuario.id));
+      onUsuarioDeleted(usuario.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al eliminar participante");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -78,31 +108,52 @@ export function ParticipantesSelect({
           {usuarios.map((usuario) => {
             const selected = selectedIds.includes(usuario.id);
             return (
-              <label
+              <div
                 key={usuario.id}
                 className={[
-                  "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors",
+                  "flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors",
                   selected
                     ? "border-blue-200 bg-blue-50 text-gray-900"
                     : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50",
                 ].join(" ")}
               >
                 <input
+                  id={`participante-${usuario.id}`}
                   type="checkbox"
                   checked={selected}
                   onChange={() => toggle(usuario.id)}
                   className="h-4 w-4 rounded border-gray-300"
                 />
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600">
-                  {usuario.nombre.slice(0, 1).toUpperCase()}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">{usuario.nombre}</span>
-                  <span className="block truncate text-xs text-gray-500">
-                    {usuario.timezone}
+                <label
+                  htmlFor={`participante-${usuario.id}`}
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-3"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600">
+                    {usuario.nombre.slice(0, 1).toUpperCase()}
                   </span>
-                </span>
-              </label>
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{usuario.nombre}</span>
+                    <span className="block truncate text-xs text-gray-500">
+                      {usuario.timezone}
+                    </span>
+                  </span>
+                </label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                  onClick={() => deleteUsuario(usuario)}
+                  disabled={deletingId === usuario.id}
+                  aria-label={`Eliminar participante ${usuario.nombre}`}
+                >
+                  {deletingId === usuario.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             );
           })}
         </div>

@@ -4,6 +4,16 @@ export type ProductoEstado =
   | "en_transito"
   | "descontinuado";
 
+export type InventarioMovimientoTipo =
+  | "ingreso_disponible"
+  | "ingreso_transito"
+  | "confirmacion_transito"
+  | "salida"
+  | "devolucion"
+  | "merma"
+  | "ajuste_disponible"
+  | "ajuste_transito";
+
 export type CategoriaOption = {
   id: string;
   nombre: string;
@@ -35,12 +45,13 @@ export type ProductoFormValues = {
   precioCosto: string;
   precioB2B: string;
   precioB2C: string;
-  stockActual: string;
+  stockDisponible: string;
+  stockEnTransito: string;
   stockMinimo: string;
+  ubicacion: string;
   proveedorId: string;
   containerId: string;
   fotos: string[];
   fotoPortada: string;
-  estado: ProductoEstado;
   notas: string;
 };

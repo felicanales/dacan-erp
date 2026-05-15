@@ -6,13 +6,8 @@ import { verifyAuth } from "@/src/lib/api-auth";
 const updateSchema = z.object({
   titulo: z.string().min(3).optional(),
   fecha: z.string().datetime({ offset: true }).optional(),
-  duracionMinutos: z.number().int().positive().optional().nullable(),
-  tipo: z.enum(["interna", "con_proveedor", "con_cliente"]).optional(),
   estado: z.enum(["programada", "completada", "cancelada"]).optional(),
   linkVideoCall: z.string().url().optional().nullable().or(z.literal("")),
-  agenda: z.string().optional().nullable(),
-  acta: z.string().optional().nullable(),
-  acuerdos: z.string().optional().nullable(),
   notasIa: z.string().optional().nullable(),
   participantes: z.array(z.string()).min(1).optional(),
 });
@@ -110,17 +105,10 @@ export async function PUT(
       data: {
         ...(data.titulo !== undefined && { titulo: data.titulo }),
         ...(data.fecha !== undefined && { fecha: new Date(data.fecha) }),
-        ...(data.duracionMinutos !== undefined && {
-          duracionMinutos: data.duracionMinutos,
-        }),
-        ...(data.tipo !== undefined && { tipo: data.tipo }),
         ...(data.estado !== undefined && { estado: data.estado }),
         ...(data.linkVideoCall !== undefined && {
           linkVideoCall: data.linkVideoCall || null,
         }),
-        ...(data.agenda !== undefined && { agenda: data.agenda }),
-        ...(data.acta !== undefined && { acta: data.acta }),
-        ...(data.acuerdos !== undefined && { acuerdos: data.acuerdos }),
         ...(data.notasIa !== undefined && { notasIa: data.notasIa }),
       },
     });

@@ -41,6 +41,7 @@ export function CambiarEstado({ containerId, estadoActual }: Props) {
   const router = useRouter();
   const [nuevoEstado, setNuevoEstado] = useState<ContainerEstado>(estadoActual);
   const [nota,        setNota]        = useState("");
+  const [confirmarStockTransito, setConfirmarStockTransito] = useState(false);
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState<string | null>(null);
 
@@ -54,13 +55,19 @@ export function CambiarEstado({ containerId, estadoActual }: Props) {
       const res = await fetch(`/api/containers/${containerId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ estado: nuevoEstado, nota: nota || undefined }),
+        body: JSON.stringify({
+          estado: nuevoEstado,
+          nota: nota || undefined,
+          confirmarStockTransito:
+            nuevoEstado === "descargado" ? confirmarStockTransito : undefined,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Error al cambiar estado");
       }
       setNota("");
+      setConfirmarStockTransito(false);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
@@ -104,6 +111,19 @@ export function CambiarEstado({ containerId, estadoActual }: Props) {
           rows={2}
         />
       </div>
+      {nuevoEstado === "descargado" && (
+        <label className="flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-blue-200"
+            checked={confirmarStockTransito}
+            onChange={(e) => setConfirmarStockTransito(e.target.checked)}
+          />
+          <span>
+            Confirmar stock en transito de los productos asociados y moverlo a stock disponible.
+          </span>
+        </label>
+      )}
       {error && <p className="text-xs text-red-600">{error}</p>}
       <Button
         onClick={handleCambio}

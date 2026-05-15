@@ -1,0 +1,4 @@
+ALTER TABLE "Reunion"
+  DROP COLUMN IF EXISTS "tipo";
+
+DROP TYPE IF EXISTS "ReunionTipo";

@@ -16,9 +16,11 @@ async function verifyAuth(req: NextRequest) {
 }
 
 const paginaUpdateSchema = z.object({
+  nombre: z.string().nullable().optional(),
   titulo: z.string().min(1).optional(),
   icono: z.string().nullable().optional(),
   contenido: z.unknown().optional(),
+  carpetaId: z.string().nullable().optional(),
 });
 
 export async function GET(
@@ -53,10 +55,16 @@ export async function PUT(
   }
 
   const updateData: Prisma.PaginaUpdateInput = {};
+  if ("nombre" in parsed.data) updateData.nombre = parsed.data.nombre ?? null;
   if (parsed.data.titulo !== undefined) updateData.titulo = parsed.data.titulo;
   if ("icono" in parsed.data) updateData.icono = parsed.data.icono ?? null;
   if (parsed.data.contenido !== undefined) {
     updateData.contenido = parsed.data.contenido as Prisma.InputJsonValue;
+  }
+  if ("carpetaId" in parsed.data) {
+    updateData.carpeta = parsed.data.carpetaId
+      ? { connect: { id: parsed.data.carpetaId } }
+      : { disconnect: true };
   }
 
   const pagina = await prisma.pagina.update({
@@ -75,7 +83,15 @@ export async function DELETE(
   if (!claims) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const { id } = await params;
-  await prisma.pagina.delete({ where: { id } });
+  try {
+    await prisma.pagina.delete({ where: { id } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    }
+
+    throw error;
+  }
 
   return NextResponse.json({ ok: true });
 }

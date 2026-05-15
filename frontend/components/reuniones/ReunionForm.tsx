@@ -10,9 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectItem,
 } from "@/components/ui/select";
 import { ParticipantesSelect } from "@/components/reuniones/ParticipantesSelect";
 
@@ -23,17 +23,14 @@ type Usuario = {
   timezone: string;
 };
 
-type ReunionTipo = "interna" | "con_proveedor" | "con_cliente";
 type ReunionEstado = "programada" | "completada" | "cancelada";
 
 type ReunionFormData = {
   titulo: string;
   fecha: string;
-  duracionMinutos: string;
-  tipo: ReunionTipo;
   estado: ReunionEstado;
   linkVideoCall: string;
-  agenda: string;
+  notasIa: string;
   participantes: string[];
 };
 
@@ -41,6 +38,7 @@ type Props = {
   usuarios: Usuario[];
   defaultValues?: Partial<ReunionFormData>;
   reunionId?: string;
+  showNotasIa?: boolean;
 };
 
 const inputClass =
@@ -54,7 +52,12 @@ function toDateTimeLocal(iso?: string | null) {
   return local.toISOString().slice(0, 16);
 }
 
-export function ReunionForm({ usuarios, defaultValues, reunionId }: Props) {
+export function ReunionForm({
+  usuarios,
+  defaultValues,
+  reunionId,
+  showNotasIa = true,
+}: Props) {
   const router = useRouter();
   const [availableUsuarios, setAvailableUsuarios] = useState(usuarios);
   const [loading, setLoading] = useState(false);
@@ -62,11 +65,9 @@ export function ReunionForm({ usuarios, defaultValues, reunionId }: Props) {
   const [form, setForm] = useState<ReunionFormData>({
     titulo: defaultValues?.titulo ?? "",
     fecha: defaultValues?.fecha ?? toDateTimeLocal(),
-    duracionMinutos: defaultValues?.duracionMinutos ?? "60",
-    tipo: defaultValues?.tipo ?? "interna",
     estado: defaultValues?.estado ?? "programada",
     linkVideoCall: defaultValues?.linkVideoCall ?? "",
-    agenda: defaultValues?.agenda ?? "",
+    notasIa: defaultValues?.notasIa ?? "",
     participantes:
       defaultValues?.participantes ??
       (availableUsuarios[0] ? [availableUsuarios[0].id] : []),
@@ -90,13 +91,9 @@ export function ReunionForm({ usuarios, defaultValues, reunionId }: Props) {
       const body = {
         titulo: form.titulo,
         fecha: new Date(form.fecha).toISOString(),
-        duracionMinutos: form.duracionMinutos
-          ? Number(form.duracionMinutos)
-          : null,
-        tipo: form.tipo,
         estado: form.estado,
         linkVideoCall: form.linkVideoCall || null,
-        agenda: form.agenda || null,
+        notasIa: showNotasIa ? form.notasIa || null : undefined,
         participantes: form.participantes,
       };
 
@@ -114,8 +111,8 @@ export function ReunionForm({ usuarios, defaultValues, reunionId }: Props) {
         throw new Error(data.error ?? "Error al guardar reunion");
       }
 
-      const saved = (await res.json()) as { id: string };
-      router.push(`/reuniones/${saved.id}`);
+      await res.json();
+      router.push("/reuniones");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo salio mal. Intenta de nuevo.");
@@ -157,33 +154,6 @@ export function ReunionForm({ usuarios, defaultValues, reunionId }: Props) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="duracion" className={labelClass}>Duracion (min)</Label>
-            <Input
-              id="duracion"
-              type="number"
-              min={1}
-              className={inputClass}
-              value={form.duracionMinutos}
-              onChange={(event) => set("duracionMinutos", event.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className={labelClass}>Tipo</Label>
-            <Select
-              value={form.tipo}
-              onValueChange={(value) => set("tipo", value as ReunionTipo)}
-            >
-              <SelectTrigger className={inputClass}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="interna">Interna</SelectItem>
-                <SelectItem value="con_proveedor">Con proveedor</SelectItem>
-                <SelectItem value="con_cliente">Con cliente</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
             <Label className={labelClass}>Estado</Label>
             <Select
               value={form.estado}
@@ -222,18 +192,30 @@ export function ReunionForm({ usuarios, defaultValues, reunionId }: Props) {
           onUsuarioCreated={(usuario) => {
             setAvailableUsuarios((prev) => [...prev, usuario]);
           }}
+          onUsuarioDeleted={(usuarioId) => {
+            setAvailableUsuarios((prev) =>
+              prev.filter((usuario) => usuario.id !== usuarioId)
+            );
+          }}
         />
       </section>
 
-      <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
-        <h2 className="text-sm font-semibold text-gray-900">Agenda</h2>
-        <Textarea
-          className="min-h-36 resize-y border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500"
-          value={form.agenda}
-          onChange={(event) => set("agenda", event.target.value)}
-          placeholder={"1. Revision estado containers\n2. Avance ventas B2B\n3. Proximos pasos"}
-        />
-      </section>
+      {showNotasIa && (
+        <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900">Notas IA</h2>
+            <p className="mt-1 text-xs text-gray-500">
+              Usa este recuadro para separar transcripcion, resumen, decisiones, pendientes y cualquier detalle de la reunion.
+            </p>
+          </div>
+          <Textarea
+            className="min-h-56 resize-y border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500"
+            value={form.notasIa}
+            onChange={(event) => set("notasIa", event.target.value)}
+            placeholder={"Transcripcion:\n\nResumen:\n\nDecisiones:\n\nPendientes:\n\nObservaciones:"}
+          />
+        </section>
+      )}
 
       {error && (
         <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
@@ -248,7 +230,7 @@ export function ReunionForm({ usuarios, defaultValues, reunionId }: Props) {
           className="h-9 w-full bg-blue-500 text-sm text-white hover:bg-blue-600 sm:w-auto"
         >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {loading ? "Guardando..." : reunionId ? "Guardar cambios" : "Agendar reunion"}
+          {loading ? "Guardando..." : "Guardar reunion"}
         </Button>
         <Button
           type="button"

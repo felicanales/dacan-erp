@@ -54,6 +54,26 @@ export async function POST(req: NextRequest) {
   });
 
   if (existing) {
+    if (!existing.activo) {
+      const restored = await prisma.usuario.update({
+        where: { id: existing.id },
+        data: {
+          nombre: parsed.data.nombre,
+          timezone: parsed.data.timezone,
+          activo: true,
+        },
+        select: {
+          id: true,
+          nombre: true,
+          email: true,
+          timezone: true,
+          rol: true,
+        },
+      });
+
+      return NextResponse.json(restored, { status: 200 });
+    }
+
     return NextResponse.json(
       { error: "Ya existe un participante con ese correo" },
       { status: 409 }

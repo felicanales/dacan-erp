@@ -18,7 +18,10 @@ export async function proxyToBackend(path: string, request: NextRequest) {
     ? undefined
     : await request.text();
 
-  const res = await fetch(`${BACKEND_URL}${path}`, {
+  const backendUrl = new URL(path, BACKEND_URL);
+  backendUrl.search = request.nextUrl.search;
+
+  const res = await fetch(backendUrl, {
     method: request.method,
     headers: {
       "Content-Type": request.headers.get("content-type") ?? "application/json",
