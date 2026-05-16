@@ -205,14 +205,14 @@ export function ReunionForm({
           <div>
             <h2 className="text-sm font-semibold text-gray-900">Notas IA</h2>
             <p className="mt-1 text-xs text-gray-500">
-              Usa este recuadro para separar transcripcion, resumen, decisiones, pendientes y cualquier detalle de la reunion.
+              Pega el resumen de Fathom tal cual para conservar titulos, listas y enlaces en la vista.
             </p>
           </div>
           <Textarea
             className="min-h-56 resize-y border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-blue-500"
             value={form.notasIa}
             onChange={(event) => set("notasIa", event.target.value)}
-            placeholder={"Transcripcion:\n\nResumen:\n\nDecisiones:\n\nPendientes:\n\nObservaciones:"}
+            placeholder={"Reunion semanal - May 13\nVIEW RECORDING: https://...\n\nProposito de la reunion\n\nResumen...\n\nPuntos clave\n\n  - Tema importante: detalle con contexto."}
           />
         </section>
       )}

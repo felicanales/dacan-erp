@@ -6,7 +6,7 @@ import { Edit3, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MarkdownNotes } from "@/components/reuniones/MarkdownNotes";
+import { MeetingNotes } from "@/components/reuniones/MarkdownNotes";
 
 type Props = {
   reunionId: string;
@@ -66,7 +66,7 @@ export function NotasIaForm({ reunionId, defaultNotasIa }: Props) {
         <div>
           <h2 className="text-sm font-semibold text-gray-900">Notas IA</h2>
           <p className="mt-1 text-xs text-gray-500">
-            Pega el resumen de Fathom en Markdown; se renderiza con títulos, listas y enlaces.
+            Pega el resumen de Fathom tal cual; se renderiza con titulos, listas y enlaces.
           </p>
         </div>
 
@@ -87,14 +87,14 @@ export function NotasIaForm({ reunionId, defaultNotasIa }: Props) {
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="notasIa" className="text-sm font-medium text-gray-900">
-              Markdown de Fathom
+              Resumen de Fathom
             </Label>
             <Textarea
               id="notasIa"
               className="min-h-[360px] resize-y border-gray-200 bg-white font-mono text-sm leading-6 text-gray-900 focus-visible:ring-1 focus-visible:ring-blue-500"
               value={notasIa}
               onChange={(event) => setNotasIa(event.target.value)}
-              placeholder={"# Título\n\n[VIEW RECORDING](https://...)\n\n## Puntos clave\n\n- **Tema importante.** Detalle con contexto."}
+              placeholder={"Reunion semanal - May 13\nVIEW RECORDING: https://...\n\nProposito de la reunion\n\nResumen...\n\nPuntos clave\n\n  - Tema importante: detalle con contexto."}
             />
           </div>
 
@@ -111,7 +111,11 @@ export function NotasIaForm({ reunionId, defaultNotasIa }: Props) {
               disabled={loading}
               className="h-9 w-full bg-blue-500 text-sm text-white hover:bg-blue-600 sm:w-auto"
             >
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
               Guardar notas
             </Button>
             {savedNotasIa.trim() && (
@@ -128,8 +132,8 @@ export function NotasIaForm({ reunionId, defaultNotasIa }: Props) {
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-100 bg-white px-1 py-1 sm:px-2">
-          <MarkdownNotes content={savedNotasIa} />
+        <div className="bg-white px-1 py-1 sm:px-2">
+          <MeetingNotes content={savedNotasIa} />
         </div>
       )}
     </section>
