@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDays, ChevronLeft, ExternalLink } from "lucide-react";
+import { CalendarDays, ChevronLeft, ExternalLink, Pencil } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
+import { Button } from "@/components/ui/button";
 import { NotasIaForm } from "@/components/reuniones/NotasIaForm";
 
 type Usuario = {
@@ -63,41 +64,54 @@ export default async function ReunionDetallePage({
 
   return (
     <div className="w-full max-w-5xl space-y-6">
-      <div>
-        <Link
-          href="/reuniones"
-          className="mb-3 inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-900"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Reuniones
-        </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold text-gray-900">{reunion.titulo}</h1>
-          <span
-            className={[
-              "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
-              ESTADO_BADGE[reunion.estado],
-            ].join(" ")}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <Link
+            href="/reuniones"
+            className="mb-3 inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-900"
           >
-            {ESTADO_LABELS[reunion.estado]}
-          </span>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
-          <span className="inline-flex items-center gap-1.5">
-            <CalendarDays className="h-4 w-4" />
-            {formatFecha(reunion.fecha)}
-          </span>
-          {reunion.linkVideoCall && (
-            <Link
-              href={reunion.linkVideoCall}
-              target="_blank"
-              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700"
+            <ChevronLeft className="h-4 w-4" />
+            Reuniones
+          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold text-gray-900">{reunion.titulo}</h1>
+            <span
+              className={[
+                "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
+                ESTADO_BADGE[reunion.estado],
+              ].join(" ")}
             >
-              Videollamada
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Link>
-          )}
+              {ESTADO_LABELS[reunion.estado]}
+            </span>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4" />
+              {formatFecha(reunion.fecha)}
+            </span>
+            {reunion.linkVideoCall && (
+              <Link
+                href={reunion.linkVideoCall}
+                target="_blank"
+                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700"
+              >
+                Videollamada
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
+            )}
+          </div>
         </div>
+
+        <Button
+          asChild
+          variant="outline"
+          className="w-full border-gray-200 text-gray-700 sm:mt-8 sm:w-auto"
+        >
+          <Link href={`/reuniones/${reunion.id}/editar`}>
+            <Pencil className="h-4 w-4" />
+            Editar
+          </Link>
+        </Button>
       </div>
 
       <section className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">

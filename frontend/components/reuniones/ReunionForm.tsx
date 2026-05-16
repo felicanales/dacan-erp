@@ -112,7 +112,7 @@ export function ReunionForm({
       }
 
       await res.json();
-      router.push("/reuniones");
+      router.push(reunionId ? `/reuniones/${reunionId}` : "/reuniones");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo salio mal. Intenta de nuevo.");
@@ -230,7 +230,7 @@ export function ReunionForm({
           className="h-9 w-full bg-blue-500 text-sm text-white hover:bg-blue-600 sm:w-auto"
         >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {loading ? "Guardando..." : "Guardar reunion"}
+          {loading ? "Guardando..." : reunionId ? "Guardar cambios" : "Guardar reunion"}
         </Button>
         <Button
           type="button"
