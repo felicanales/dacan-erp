@@ -8,6 +8,7 @@ import {
   LayoutDashboard, Building2, Package, Tag, Warehouse,
   Users, ShoppingCart, ClipboardList, Target, Map,
   BarChart3, CheckSquare, CalendarDays, FileText, ChevronRight,
+  Calculator, CreditCard, Repeat2, WalletCards,
 } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: ElementType };
@@ -23,6 +24,12 @@ const navGroups: NavGroup[] = [
     { label: "Proveedores",    href: "/proveedores", icon: Building2 },
     { label: "Containers",     href: "/containers",  icon: Package },
     { label: "Inventario",     href: "/inventario",  icon: Warehouse },
+  ]},
+  { label: "Finanzas", items: [
+    { label: "Resumen",        href: "/finanzas", icon: WalletCards },
+    { label: "Pagos",          href: "/finanzas/pagos", icon: CreditCard },
+    { label: "Suscripciones",  href: "/finanzas/suscripciones", icon: Repeat2 },
+    { label: "Costos import.", href: "/finanzas/costos-importacion/calcular", icon: Calculator },
   ]},
   { label: "Comercial", items: [
     { label: "Catálogo",        href: "/productos",    icon: Tag },
@@ -46,6 +53,9 @@ const recentItems: NavItem[] = [
   { label: "Panel", href: "/dashboard", icon: LayoutDashboard },
   { label: "Proveedores", href: "/proveedores", icon: Building2 },
   { label: "Containers", href: "/containers", icon: Package },
+  { label: "Finanzas", href: "/finanzas", icon: WalletCards },
+  { label: "Pagos", href: "/finanzas/pagos", icon: CreditCard },
+  { label: "Suscripciones", href: "/finanzas/suscripciones", icon: Repeat2 },
   { label: "Reuniones", href: "/reuniones", icon: CalendarDays },
 ];
 
@@ -139,7 +149,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               {!collapsed && (
                 <div id={`sidebar-group-${label}`} className="space-y-1 md:space-y-0.5">
                   {items.map(({ label: itemLabel, href, icon: Icon }) => {
-                    const active = pathname === href || pathname.startsWith(href + "/");
+                    const active =
+                      href === "/finanzas"
+                        ? pathname === href
+                        : pathname === href || pathname.startsWith(href + "/");
                     return (
                       <Link
                         key={href}

@@ -15,13 +15,13 @@ dacan-erp/
 
 ## Stack
 
-| Servicio | Tecnología |
-|---|---|
-| Frontend | Next.js 15, Tailwind CSS, shadcn/ui, Clerk |
-| Backend | Next.js 15 (API routes), Prisma, PostgreSQL |
-| Auth | Clerk (JWT verificado en backend) |
-| Correos | Resend (pendiente) |
-| Archivos | Cloudflare R2 (pendiente) |
+| Servicio | Tecnología                                  |
+| -------- | ------------------------------------------- |
+| Frontend | Next.js 15, Tailwind CSS, shadcn/ui, Clerk  |
+| Backend  | Next.js 15 (API routes), Prisma, PostgreSQL |
+| Auth     | Clerk (JWT verificado en backend)           |
+| Correos  | Resend (pendiente)                          |
+| Archivos | Cloudflare R2 (pendiente)                   |
 
 ## Setup local
 
@@ -32,6 +32,7 @@ npm run install:all
 ```
 
 O por separado:
+
 ```bash
 npm install --prefix frontend
 npm install --prefix backend
@@ -40,6 +41,7 @@ npm install --prefix backend
 ### 2. Variables de entorno
 
 Crear `.env.local` en cada servicio:
+
 ```bash
 cp .env.example frontend/.env.local   # completar con variables de frontend
 cp .env.example backend/.env.local    # completar con variables de backend
@@ -61,6 +63,7 @@ npm run dev            # inicia frontend (3000) y backend (3001) juntos
 ```
 
 O por separado:
+
 ```bash
 npm run dev:frontend   # solo frontend en localhost:3000
 npm run dev:backend    # solo backend en localhost:3001
@@ -68,9 +71,9 @@ npm run dev:backend    # solo backend en localhost:3001
 
 ## Módulos — Fase 1 (MVP)
 
-- [ ] Autenticación y roles (Clerk)
-- [ ] Catálogo de Productos
-- [ ] Inventario
-- [ ] Proveedores
-- [ ] Containers
+- [x] Autenticación y roles (Clerk)
+- [x] Catálogo de Productos
+- [x] Inventario
+- [x] Proveedores
+- [x] Containers
 - [ ] Dashboard de KPIs
